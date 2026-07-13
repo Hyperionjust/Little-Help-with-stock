@@ -1,0 +1,27 @@
+<!doctype html>
+<!--
+  dashboard 骨架参考模板（render_html.py 生成的是自包含成品，本文件是结构参考/离线起点）。
+  关键契约：必须内嵌 <script id="analysis-data" type="application/json"> 完整 JSON，供 verify_consistency 机检。
+  所有展示数字通过 V(node)=node.value 从内嵌 JSON 读取，保证与 JSON 唯一数据源完全一致。
+-->
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>__TITLE__ · stock-metrics-pro</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<script id="analysis-data" type="application/json">__ANALYSIS_JSON__</script>
+<style>
+:root{--bg:#0f1419;--fg:#e6e6e6;--card:#1a222c;--accent:#4aa3ff;--line:#2a333f}
+@media(prefers-color-scheme:light){:root{--bg:#f7f9fc;--fg:#1a1a1a;--card:#fff;--line:#e3e8ef}}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,'PingFang SC',sans-serif;padding:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 16px}
+.gate-ok{background:#27ae6022}.gate-warn{background:#f39c1222}.gate-bad{background:#e74c3c22}
+.checklist-h{color:#e74c3c}
+</style></head><body>
+<!-- 区块顺序：门禁面板 → 估值卡 → K线/MACD/RSI → 盈利/杜邦 → 偿债 → 成长 → 逆向验证红黄绿灯
+     → (医药) rNPV瀑布/敏感性tornado/管线矩阵/LOE时间线/催化剂日历/🔴需人工核对清单 → 免责声明 -->
+<div id="app">占位——render_html.py 会填充完整内容</div>
+<script>
+const DATA = JSON.parse(document.getElementById('analysis-data').textContent);
+const V = n => (n && typeof n==='object') ? n.value : n;
+// 示例：估值卡从 DATA.valuation 渲染，绝不在前端重新计算
+</script></body></html>

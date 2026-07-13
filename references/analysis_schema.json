@@ -1,0 +1,285 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "stock-metrics-pro/analysis.schema.json",
+  "title": "stock-metrics-pro analysis output",
+  "description": "Single source of truth. Markdown/HTML/Excel all render from this. Schema stable for future advice layer.",
+  "type": "object",
+  "required": ["schema_version", "meta", "resolution", "quote", "valuation", "profitability", "reverse_validation", "solvency", "growth", "technicals", "quality_report", "data_gaps"],
+  "additionalProperties": true,
+  "definitions": {
+    "annotated_value": {
+      "type": "object",
+      "description": "Three-part provenance: source name, collection timestamp, formula/basis.",
+      "required": ["value", "source", "as_of", "formula"],
+      "properties": {
+        "value": {"type": ["number", "string", "null"]},
+        "source": {"type": "string", "description": "provider.interface, e.g. 'akshare.stock_zh_a_hist'"},
+        "as_of": {"type": ["string", "null"], "description": "ISO8601 collection/data timestamp"},
+        "formula": {"type": "string", "description": "计算公式或口径说明"},
+        "unit": {"type": ["string", "null"]},
+        "period": {"type": ["string", "null"], "description": "报告期区间, e.g. 'TTM 2023Q4-2024Q3'"}
+      },
+      "additionalProperties": true
+    },
+    "pharma_assumption": {
+      "type": "object",
+      "required": ["value", "source", "as_of", "formula", "source_type"],
+      "properties": {
+        "value": {"type": ["number", "string", "null"]},
+        "source": {"type": "string"},
+        "as_of": {"type": ["string", "null"]},
+        "formula": {"type": "string"},
+        "unit": {"type": ["string", "null"]},
+        "source_type": {"type": "string", "enum": ["hard", "benchmark", "user_assumption"]}
+      },
+      "additionalProperties": true
+    }
+  },
+  "properties": {
+    "schema_version": {"type": "string"},
+    "meta": {
+      "type": "object",
+      "required": ["generated_at", "generator", "adjust_mode", "disclaimer"],
+      "properties": {
+        "generated_at": {"type": "string"},
+        "generator": {"type": "string"},
+        "adjust_mode": {"type": "string", "enum": ["qfq", "hfq", "none", "unknown"], "description": "复权口径；none/unknown 触发 warning"},
+        "accounting_standard": {"type": ["string", "null"], "enum": ["CAS", "IFRS", "US_GAAP", null]},
+        "base_currency": {"type": ["string", "null"]},
+        "disclaimer": {"type": "string"}
+      },
+      "additionalProperties": true
+    },
+    "resolution": {
+      "type": "object",
+      "required": ["market", "symbol", "name", "currency", "exchange", "is_pharma"],
+      "properties": {
+        "market": {"type": "string", "enum": ["A", "HK", "US"]},
+        "symbol": {"type": "string"},
+        "name": {"type": ["string", "null"]},
+        "currency": {"type": "string"},
+        "exchange": {"type": ["string", "null"]},
+        "industry_tag": {"type": ["string", "null"]},
+        "is_pharma": {"type": "boolean"},
+        "benchmark_index": {"type": ["string", "null"]}
+      },
+      "additionalProperties": true
+    },
+    "quote": {
+      "type": "object",
+      "required": ["price", "market_cap"],
+      "properties": {
+        "price": {"$ref": "#/definitions/annotated_value"},
+        "market_cap": {"$ref": "#/definitions/annotated_value"},
+        "prev_close": {"$ref": "#/definitions/annotated_value"},
+        "cross_source_check": {
+          "type": "object",
+          "description": "跨源价格校验",
+          "properties": {
+            "sources": {"type": "object"},
+            "max_rel_diff": {"type": ["number", "null"]},
+            "passed": {"type": ["boolean", "null"]}
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "valuation": {
+      "type": "object",
+      "properties": {
+        "pe_ttm": {"$ref": "#/definitions/annotated_value"},
+        "pe_static": {"$ref": "#/definitions/annotated_value"},
+        "pe_forward": {"$ref": "#/definitions/annotated_value"},
+        "pb": {"$ref": "#/definitions/annotated_value"},
+        "ps_ttm": {"$ref": "#/definitions/annotated_value"},
+        "peg": {"$ref": "#/definitions/annotated_value"},
+        "ev_ebitda": {"$ref": "#/definitions/annotated_value"},
+        "dividend_yield": {"$ref": "#/definitions/annotated_value"},
+        "default_pe_basis": {"type": "string", "enum": ["ttm", "static", "forward"]}
+      },
+      "additionalProperties": true
+    },
+    "profitability": {
+      "type": "object",
+      "properties": {
+        "roe": {"$ref": "#/definitions/annotated_value"},
+        "roa": {"$ref": "#/definitions/annotated_value"},
+        "roic": {"$ref": "#/definitions/annotated_value"},
+        "gross_margin": {"$ref": "#/definitions/annotated_value"},
+        "net_margin": {"$ref": "#/definitions/annotated_value"},
+        "cash_content": {"$ref": "#/definitions/annotated_value"},
+        "dupont": {
+          "type": "object",
+          "description": "杜邦三分解，三因子乘积应≈ROE",
+          "properties": {
+            "net_margin": {"$ref": "#/definitions/annotated_value"},
+            "asset_turnover": {"$ref": "#/definitions/annotated_value"},
+            "equity_multiplier": {"$ref": "#/definitions/annotated_value"},
+            "product_check": {"$ref": "#/definitions/annotated_value"}
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "reverse_validation": {
+      "type": "object",
+      "description": "逆向验证：揭示利润好看但现金流/资产质量恶化",
+      "properties": {
+        "ar_vs_revenue_growth": {"$ref": "#/definitions/annotated_value"},
+        "inventory_vs_revenue_growth": {"$ref": "#/definitions/annotated_value"},
+        "ocf_ni_divergence_3y": {"$ref": "#/definitions/annotated_value"},
+        "flags": {"type": "array", "items": {"type": "object"}}
+      },
+      "additionalProperties": true
+    },
+    "solvency": {
+      "type": "object",
+      "properties": {
+        "debt_to_asset": {"$ref": "#/definitions/annotated_value"},
+        "current_ratio": {"$ref": "#/definitions/annotated_value"},
+        "quick_ratio": {"$ref": "#/definitions/annotated_value"},
+        "interest_coverage": {"$ref": "#/definitions/annotated_value"},
+        "ar_days": {"$ref": "#/definitions/annotated_value"},
+        "inventory_days": {"$ref": "#/definitions/annotated_value"}
+      },
+      "additionalProperties": true
+    },
+    "growth": {
+      "type": "object",
+      "properties": {
+        "revenue_yoy": {"$ref": "#/definitions/annotated_value"},
+        "net_income_yoy": {"$ref": "#/definitions/annotated_value"},
+        "revenue_qoq": {"$ref": "#/definitions/annotated_value"},
+        "revenue_cagr_3y": {"$ref": "#/definitions/annotated_value"},
+        "revenue_cagr_5y": {"$ref": "#/definitions/annotated_value"},
+        "net_income_cagr_3y": {"$ref": "#/definitions/annotated_value"}
+      },
+      "additionalProperties": true
+    },
+    "technicals": {
+      "type": "object",
+      "properties": {
+        "moving_averages": {"type": "object"},
+        "ma_alignment": {"$ref": "#/definitions/annotated_value"},
+        "macd": {"type": "object"},
+        "rsi": {"type": "object"},
+        "kdj": {"type": "object"},
+        "bias": {"type": "object"},
+        "atr": {"$ref": "#/definitions/annotated_value"},
+        "volatility_20d": {"$ref": "#/definitions/annotated_value"},
+        "volume_ratio": {"$ref": "#/definitions/annotated_value"},
+        "turnover_rate": {"$ref": "#/definitions/annotated_value"},
+        "relative_strength": {"type": "object"},
+        "support_resistance": {"type": "object"}
+      },
+      "additionalProperties": true
+    },
+    "pharma": {
+      "type": "object",
+      "description": "仅医药标的存在",
+      "required": ["paradigm", "rnpv", "pipeline", "human_verification_checklist"],
+      "properties": {
+        "paradigm": {"type": "string", "enum": ["commercial", "clinical_biotech", "large_pharma_sotp"]},
+        "clinical_discount_rate": {"$ref": "#/definitions/pharma_assumption"},
+        "wacc_general": {"$ref": "#/definitions/annotated_value"},
+        "double_penalty_check": {
+          "type": "object",
+          "required": ["clinical_rate_is_independent", "passed"],
+          "properties": {
+            "clinical_rate_is_independent": {"type": "boolean"},
+            "clinical_rate": {"type": ["number", "null"]},
+            "wacc": {"type": ["number", "null"]},
+            "passed": {"type": "boolean"}
+          },
+          "additionalProperties": true
+        },
+        "rnpv": {
+          "type": "object",
+          "required": ["company_rnpv", "assets"],
+          "properties": {
+            "company_rnpv": {"$ref": "#/definitions/annotated_value"},
+            "net_cash": {"$ref": "#/definitions/annotated_value"},
+            "debt": {"$ref": "#/definitions/annotated_value"},
+            "sum_asset_rnpv": {"$ref": "#/definitions/annotated_value"},
+            "assets": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["asset", "indication", "current_phase", "cumulative_pos", "asset_rnpv"],
+                "properties": {
+                  "asset": {"type": "string"},
+                  "indication": {"type": "string"},
+                  "current_phase": {"type": ["string", "null"]},
+                  "therapeutic_area": {"type": ["string", "null"]},
+                  "peak_sales": {"$ref": "#/definitions/pharma_assumption"},
+                  "cumulative_pos": {"$ref": "#/definitions/pharma_assumption"},
+                  "penetration": {"$ref": "#/definitions/pharma_assumption"},
+                  "asset_rnpv": {"$ref": "#/definitions/annotated_value"},
+                  "stage_breakdown": {"type": "array", "items": {"type": "object"}}
+                },
+                "additionalProperties": true
+              }
+            }
+          },
+          "additionalProperties": true
+        },
+        "sensitivity": {"type": "object", "description": "tornado 单因素敏感性"},
+        "pipeline": {
+          "type": "object",
+          "required": ["trials", "total_count"],
+          "properties": {
+            "total_count": {"type": ["integer", "null"]},
+            "trials": {"type": "array", "items": {"type": "object"}},
+            "terminated": {"type": "array", "items": {"type": "object"}}
+          },
+          "additionalProperties": true
+        },
+        "loe": {"type": "object", "description": "专利悬崖/瀑布"},
+        "catalysts": {"type": "array", "items": {"type": "object"}},
+        "human_verification_checklist": {
+          "type": "array",
+          "description": "🔴 需人工核对清单：所有 user_assumption 必须在此逐项列出",
+          "items": {
+            "type": "object",
+            "required": ["item", "value", "source_type", "impact_on_rnpv"],
+            "properties": {
+              "item": {"type": "string"},
+              "value": {"type": ["number", "string", "null"]},
+              "source_type": {"type": "string", "enum": ["hard", "benchmark", "user_assumption"]},
+              "impact_on_rnpv": {"type": "string"}
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "quality_report": {
+      "type": "object",
+      "required": ["passed", "degraded", "critical", "warning"],
+      "properties": {
+        "passed": {"type": "boolean"},
+        "degraded": {"type": "boolean", "description": "true=只出降级报告"},
+        "critical": {"type": "array", "items": {"type": "object", "required": ["check", "message"]}},
+        "warning": {"type": "array", "items": {"type": "object", "required": ["check", "message"]}},
+        "field_coverage": {"type": ["number", "null"]}
+      },
+      "additionalProperties": true
+    },
+    "data_gaps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["field", "reason"],
+        "properties": {
+          "field": {"type": "string"},
+          "reason": {"type": "string"},
+          "providers_tried": {"type": "array", "items": {"type": "string"}}
+        },
+        "additionalProperties": true
+      }
+    }
+  }
+}

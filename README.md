@@ -61,9 +61,15 @@
 
 ---
 
-## ⚠️ 只能在电脑上用
+## ⚠️ 只能在「桌面版 AI」里用，不支持网页版
 
-**本工具只支持 Claude 桌面版，不支持网页版**——它需要在电脑上装 Python 库、联网抓行情数据，网页版做不到这些。
+本工具是一个 **Skill（技能，SKILL.md 格式）**，凡是**支持 Skills 的 AI 桌面客户端都能用**，不绑定某一家。例如：
+
+- **Claude 桌面版**（Cowork 模式）
+- **Kimi 桌面版**（Kimi 精选 Skills 就是这个格式）
+- **Qwen Code / 通义**、**MiniMax（Mini-Agent）** 等支持 SKILL.md 技能的桌面客户端
+
+**为什么不支持网页版**：它要在你电脑上装 Python 库、跑脚本、联网抓行情数据——这些只有桌面客户端能做，网页版做不到。
 
 ---
 
@@ -71,9 +77,9 @@
 
 ### 1. 装工具
 
-在 Claude 桌面版里，把 `equity-research-suite.skill` 通过 **设置 → Custom Skills → 上传** 装进去。
+在你的**桌面版 AI** 里导入这个技能。以 **Claude 桌面版**为例：**设置 → Custom Skills → 上传** `equity-research-suite.skill`。
 
-或者克隆本仓库，放进 Claude 的技能目录。
+其他客户端（Kimi 桌面版、Qwen、MiniMax 等）大同小异——找到「技能 / Skills / 导入」入口，上传 `.skill` 文件，或直接克隆本仓库、把整个文件夹放进该客户端的技能目录即可。
 
 ### 2. 装依赖
 
@@ -87,7 +93,7 @@ pip install -r requirements.txt
 
 ### 3. 开始用
 
-在 Claude 桌面版里直接说：
+在你的桌面版 AI 里直接说：
 
 > 帮我分析一下贵州茅台
 

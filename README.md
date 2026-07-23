@@ -77,9 +77,15 @@
 
 ### 1. 装工具
 
-在你的**桌面版 AI** 里导入这个技能。以 **Claude 桌面版**为例：**设置 → Custom Skills → 上传** `equity-research-suite.skill`。
+最省事的办法——**把本仓库链接直接丢给你的桌面版 AI，让它自己装**：
 
-其他客户端（Kimi 桌面版、Qwen、MiniMax 等）大同小异——找到「技能 / Skills / 导入」入口，上传 `.skill` 文件，或直接克隆本仓库、把整个文件夹放进该客户端的技能目录即可。
+```
+https://github.com/Hyperionjust/Little-Help-with-stock
+```
+
+比如对它说：「**把这个 skill 装上：** https://github.com/Hyperionjust/Little-Help-with-stock」。现在的桌面版 AI（Claude、Kimi 等）能自己把仓库拉下来、认出这是个 Skill 并装好，不用你手动操作。
+
+> 手动方式（可选，图省心时用）：下载 `equity-research-suite.skill`，在客户端的「技能 / Skills / 导入」入口上传即可（Claude 桌面版：设置 → Custom Skills → 上传）。
 
 ### 2. 装依赖
 

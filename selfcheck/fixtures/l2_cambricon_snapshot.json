@@ -1,0 +1,869 @@
+{
+  "schema_version": "1.1.0",
+  "meta": {
+    "generated_at": "2026-07-23T05:48:20Z",
+    "generator": "stock-metrics-pro/compute_metrics.py",
+    "adjust_mode": "none",
+    "accounting_standard": "CAS",
+    "base_currency": "CNY",
+    "disclaimer": "本报告仅为数据分析，不构成任何投资建议；数据可能有误差与滞后，据此决策风险自负。",
+    "_raw_inputs": {
+      "revenue_ttm": 6497.196198680001,
+      "net_income_ttm": 2059.22853867,
+      "equity": 11836.17397281,
+      "total_assets": 13437.71406591,
+      "total_liabilities": 1594.46033044,
+      "current_assets": 12080.44435915,
+      "current_liabilities": 1332.96885141,
+      "inventory": 4943.53251026,
+      "gross_profit": 3583.313004190001,
+      "ocf": -498.39813700999997
+    }
+  },
+  "resolution": {
+    "market": "A",
+    "symbol": "688256",
+    "name": "寒武纪",
+    "currency": "CNY",
+    "exchange": "STAR",
+    "industry_tag": null,
+    "is_pharma": false,
+    "benchmark_index": "沪深300"
+  },
+  "quote": {
+    "price": {
+      "value": 1245.0,
+      "source": "tencent",
+      "as_of": "2026-07-23T05:48:14Z",
+      "formula": "最新成交价",
+      "unit": "CNY"
+    },
+    "market_cap": {
+      "value": 782225.0,
+      "source": "tencent",
+      "as_of": "2026-07-23T05:48:14Z",
+      "formula": "price×总股本 或 源提供市值",
+      "unit": "CNY"
+    },
+    "prev_close": {
+      "value": 1310.0,
+      "source": "tencent",
+      "as_of": "2026-07-23T05:48:14Z",
+      "formula": "上一交易日收盘"
+    },
+    "cross_source_check": {
+      "sources": {
+        "tencent": 1245.0,
+        "sina": 1244.9
+      },
+      "max_rel_diff": 8.032773716757093e-05,
+      "passed": true
+    }
+  },
+  "valuation": {
+    "default_pe_basis": "ttm",
+    "pe_ttm": {
+      "value": 379.8631309301968,
+      "source": "akshare",
+      "as_of": null,
+      "formula": "market_cap / 归母净利_TTM",
+      "unit": "x",
+      "period": "2025FY (annual proxy)"
+    },
+    "pe_static": {
+      "value": 379.8631309301968,
+      "source": "akshare",
+      "as_of": null,
+      "formula": "market_cap / 归母净利_上一财年",
+      "unit": "x",
+      "period": "2025FY"
+    },
+    "pe_forward": {
+      "value": null,
+      "source": "none",
+      "as_of": null,
+      "formula": "market_cap / 归母净利_一致预期",
+      "unit": "x"
+    },
+    "pb": {
+      "value": 66.08765651780071,
+      "source": "akshare",
+      "as_of": null,
+      "formula": "market_cap / 归母净资产(最新期)",
+      "unit": "x"
+    },
+    "ps_ttm": {
+      "value": 120.39424023533725,
+      "source": "akshare",
+      "as_of": null,
+      "formula": "market_cap / 营收_TTM",
+      "unit": "x",
+      "period": "2025FY (annual proxy)"
+    },
+    "peg": {
+      "value": null,
+      "source": "akshare",
+      "as_of": null,
+      "formula": "PE_TTM / (净利3年CAGR×100)；CAGR<=0则null",
+      "unit": "x"
+    },
+    "ev_ebitda": {
+      "value": 378.8338645940449,
+      "source": "akshare",
+      "as_of": null,
+      "formula": "(市值+有息负债-现金)/EBITDA_TTM；EBITDA=营业利润+折旧摊销",
+      "unit": "x"
+    },
+    "dividend_yield": {
+      "value": null,
+      "source": "none",
+      "as_of": null,
+      "formula": "每股股息/现价 或 分红总额/市值",
+      "unit": "%"
+    }
+  },
+  "profitability": {
+    "roe": {
+      "value": 23.862894814721972,
+      "source": "akshare",
+      "as_of": null,
+      "formula": "归母净利_TTM / 归母净资产均值",
+      "unit": "%",
+      "period": "2025FY (annual proxy)"
+    },
+    "roa": {
+      "value": 20.433388638546923,
+      "source": "akshare",
+      "as_of": null,
+      "formula": "归母净利_TTM / 总资产均值",
+      "unit": "%"
+    },
+    "roic": {
+      "value": 17.38390917067311,
+      "source": "akshare",
+      "as_of": null,
+      "formula": "NOPAT/(有息负债+权益)；NOPAT=营业利润×(1-有效税率)",
+      "unit": "%"
+    },
+    "gross_margin": {
+      "value": 55.151682273624466,
+      "source": "akshare",
+      "as_of": null,
+      "formula": "毛利/营收_TTM",
+      "unit": "%"
+    },
+    "net_margin": {
+      "value": 31.69411043933631,
+      "source": "akshare",
+      "as_of": null,
+      "formula": "归母净利/营收_TTM",
+      "unit": "%"
+    },
+    "cash_content": {
+      "value": -0.24203148298046698,
+      "source": "akshare",
+      "as_of": null,
+      "formula": "经营现金流_TTM / 归母净利_TTM",
+      "unit": "x"
+    },
+    "dupont": {
+      "net_margin": {
+        "value": 31.69411043933631,
+        "source": "akshare",
+        "as_of": null,
+        "formula": "归母净利/营收",
+        "unit": "%"
+      },
+      "asset_turnover": {
+        "value": 0.6447061727022495,
+        "source": "akshare",
+        "as_of": null,
+        "formula": "营收/总资产均值",
+        "unit": "x"
+      },
+      "equity_multiplier": {
+        "value": 1.1678383471699547,
+        "source": "akshare",
+        "as_of": null,
+        "formula": "总资产均值/权益均值",
+        "unit": "x"
+      },
+      "product_check": {
+        "value": 23.86289481472197,
+        "source": "akshare",
+        "as_of": null,
+        "formula": "净利率×资产周转×权益乘数 应≈ROE",
+        "unit": "%"
+      }
+    }
+  },
+  "reverse_validation": {
+    "flags": [
+      {
+        "name": "应收增速超营收",
+        "value": -333.03226397384657,
+        "level": "green"
+      },
+      {
+        "name": "存货增速超营收",
+        "value": -274.5351502172846,
+        "level": "green"
+      },
+      {
+        "name": "OCF/NI背离",
+        "value": -1.1736086909408103,
+        "level": "red"
+      }
+    ],
+    "ar_vs_revenue_growth": {
+      "value": -333.03226397384657,
+      "source": "akshare",
+      "as_of": null,
+      "formula": "应收增速 - 营收增速(YoY)，正值=回款质量存疑",
+      "unit": "pp"
+    },
+    "inventory_vs_revenue_growth": {
+      "value": -274.5351502172846,
+      "source": "akshare",
+      "as_of": null,
+      "formula": "存货增速 - 营收增速(YoY)，正值=积压风险",
+      "unit": "pp"
+    },
+    "ocf_ni_divergence_3y": {
+      "value": -1.1736086909408103,
+      "source": "akshare",
+      "as_of": null,
+      "formula": "mean((OCF_t-NI_t)/|NI_t|) 近3年，持续负=利润未转现金",
+      "unit": "ratio"
+    }
+  },
+  "solvency": {
+    "debt_to_asset": {
+      "value": 11.865562272120153,
+      "source": "akshare",
+      "as_of": null,
+      "formula": "总负债/总资产",
+      "unit": "%"
+    },
+    "current_ratio": {
+      "value": 9.062810692366469,
+      "source": "akshare",
+      "as_of": null,
+      "formula": "流动资产/流动负债",
+      "unit": "x"
+    },
+    "quick_ratio": {
+      "value": 5.354147504152593,
+      "source": "akshare",
+      "as_of": null,
+      "formula": "(流动资产-存货)/流动负债",
+      "unit": "x"
+    },
+    "interest_coverage": {
+      "value": null,
+      "source": "akshare",
+      "as_of": null,
+      "formula": "EBIT/利息费用；利息≈0则null",
+      "unit": "x"
+    },
+    "ar_days": {
+      "value": 27.39360614565319,
+      "source": "akshare",
+      "as_of": null,
+      "formula": "365×应收均值/营收_TTM",
+      "unit": "天"
+    },
+    "inventory_days": {
+      "value": 420.7255139213706,
+      "source": "akshare",
+      "as_of": null,
+      "formula": "365×存货均值/销货成本_TTM",
+      "unit": "天"
+    }
+  },
+  "growth": {
+    "revenue_yoy": {
+      "value": 453.20504597507966,
+      "source": "akshare",
+      "as_of": null,
+      "formula": "营收_t / 营收_{t-1} - 1",
+      "unit": "%"
+    },
+    "net_income_yoy": {
+      "value": -555.2403153556813,
+      "source": "akshare",
+      "as_of": null,
+      "formula": "净利_t / 净利_{t-1} - 1",
+      "unit": "%"
+    },
+    "revenue_qoq": {
+      "value": null,
+      "source": "akshare",
+      "as_of": null,
+      "formula": "营收_q / 营收_{q-1} - 1",
+      "unit": "%"
+    },
+    "revenue_cagr_3y": {
+      "value": 107.32862897602695,
+      "source": "akshare",
+      "as_of": null,
+      "formula": "(营收_t/营收_{t-3})^(1/3)-1",
+      "unit": "%"
+    },
+    "revenue_cagr_5y": {
+      "value": 69.90118654427202,
+      "source": "akshare",
+      "as_of": null,
+      "formula": "(营收_t/营收_{t-5})^(1/5)-1",
+      "unit": "%"
+    },
+    "net_income_cagr_3y": {
+      "value": null,
+      "source": "akshare",
+      "as_of": null,
+      "formula": "(净利_t/净利_{t-3})^(1/3)-1",
+      "unit": "%"
+    }
+  },
+  "technicals": {
+    "_note": "no kline"
+  },
+  "data_gaps": [
+    {
+      "field": "kline",
+      "reason": "最小驱动显式跳过（估值不需要K线）"
+    },
+    {
+      "field": "benchmark_kline",
+      "reason": "最小驱动显式跳过"
+    }
+  ],
+  "quality_report": {
+    "passed": false,
+    "degraded": false,
+    "critical": [],
+    "warning": [
+      {
+        "check": "low_field_coverage",
+        "message": "字段覆盖率 77% <80%"
+      },
+      {
+        "check": "unadjusted_technicals",
+        "message": "技术指标基于 none 数据(非前复权)"
+      },
+      {
+        "check": "pe_ttm_is_annual_proxy",
+        "message": "PE-TTM 实为年报代理口径（2025FY (annual proxy)），非滚动四季；接入付费源或导入季报后自动升级"
+      }
+    ],
+    "field_coverage": 0.7692307692307693
+  },
+  "statements": {
+    "annual": [
+      {
+        "period": "2025FY",
+        "_meta": {
+          "source": "akshare",
+          "as_of": "2026-07-23T05:48:20Z",
+          "accounting_standard": "CAS",
+          "currency": "CNY",
+          "unit": "million",
+          "derived": [
+            "cf.net_income=is.net_income"
+          ],
+          "field_sources": {
+            "revenue": "akshare",
+            "cogs": "akshare",
+            "gross_profit": "akshare",
+            "operating_income": "akshare",
+            "net_income": "akshare",
+            "ocf": "akshare",
+            "total_assets": "akshare",
+            "total_liabilities": "akshare",
+            "equity": "akshare",
+            "current_assets": "akshare",
+            "current_liabilities": "akshare",
+            "inventory": "akshare",
+            "accounts_receivable": "akshare",
+            "cash": "akshare",
+            "total_debt": "akshare",
+            "effective_tax_rate": "akshare"
+          }
+        },
+        "income_statement": {
+          "revenue": 6497.196198680001,
+          "cogs": 2913.88319449,
+          "gross_profit": 3583.313004190001,
+          "operating_income": 2061.39003478,
+          "net_income": 2059.22853867
+        },
+        "balance_sheet": {
+          "cash": 1317.35897684,
+          "accounts_receivable": 670.64322327,
+          "inventory": 4943.53251026,
+          "current_assets": 12080.44435915,
+          "total_assets": 13437.71406591,
+          "current_liabilities": 1332.96885141,
+          "total_debt": 16.7122882,
+          "total_liabilities": 1594.46033044,
+          "equity": 11836.17397281
+        },
+        "cash_flow": {
+          "ocf": -498.39813700999997,
+          "net_income": 2059.22853867
+        }
+      },
+      {
+        "period": "2024FY",
+        "_meta": {
+          "source": "akshare",
+          "as_of": "2026-07-23T05:48:20Z",
+          "accounting_standard": "CAS",
+          "currency": "CNY",
+          "unit": "million",
+          "derived": [
+            "cf.net_income=is.net_income"
+          ],
+          "field_sources": {
+            "revenue": "akshare",
+            "cogs": "akshare",
+            "gross_profit": "akshare",
+            "operating_income": "akshare",
+            "net_income": "akshare",
+            "ocf": "akshare",
+            "total_assets": "akshare",
+            "total_liabilities": "akshare",
+            "equity": "akshare",
+            "current_assets": "akshare",
+            "current_liabilities": "akshare",
+            "inventory": "akshare",
+            "accounts_receivable": "akshare",
+            "cash": "akshare",
+            "total_debt": "akshare"
+          }
+        },
+        "income_statement": {
+          "revenue": 1174.46437735,
+          "cogs": 508.40970960000004,
+          "gross_profit": 666.0546677499999,
+          "operating_income": -455.74524297000005,
+          "net_income": -452.33879100999997
+        },
+        "balance_sheet": {
+          "cash": 1986.49226628,
+          "accounts_receivable": 304.59860532,
+          "inventory": 1773.97436376,
+          "current_assets": 5800.316619439999,
+          "total_assets": 6717.8125097,
+          "current_liabilities": 818.13597938,
+          "total_debt": 114.30998395000002,
+          "total_liabilities": 1287.33293805,
+          "equity": 5422.658659680001
+        },
+        "cash_flow": {
+          "ocf": -1617.9602369000002,
+          "net_income": -452.33879100999997
+        }
+      },
+      {
+        "period": "2023FY",
+        "_meta": {
+          "source": "akshare",
+          "as_of": "2026-07-23T05:48:20Z",
+          "accounting_standard": "CAS",
+          "currency": "CNY",
+          "unit": "million",
+          "derived": [
+            "cf.net_income=is.net_income"
+          ],
+          "field_sources": {
+            "revenue": "akshare",
+            "cogs": "akshare",
+            "gross_profit": "akshare",
+            "operating_income": "akshare",
+            "net_income": "akshare",
+            "ocf": "akshare",
+            "total_assets": "akshare",
+            "total_liabilities": "akshare",
+            "equity": "akshare",
+            "current_assets": "akshare",
+            "current_liabilities": "akshare",
+            "inventory": "akshare",
+            "accounts_receivable": "akshare",
+            "cash": "akshare",
+            "total_debt": "akshare"
+          }
+        },
+        "income_statement": {
+          "revenue": 709.38658426,
+          "cogs": 218.79964946,
+          "gross_profit": 490.58693479999994,
+          "operating_income": -875.80641137,
+          "net_income": -848.44014099
+        },
+        "balance_sheet": {
+          "cash": 3953.71040854,
+          "accounts_receivable": 643.92105259,
+          "inventory": 99.40106816,
+          "current_assets": 5647.51686813,
+          "total_assets": 6418.03612233,
+          "current_liabilities": 463.1810395,
+          "total_debt": 40.3116299,
+          "total_liabilities": 688.50703301,
+          "equity": 5649.8387766000005
+        },
+        "cash_flow": {
+          "ocf": -595.53502301,
+          "net_income": -848.44014099
+        }
+      },
+      {
+        "period": "2022FY",
+        "_meta": {
+          "source": "akshare",
+          "as_of": "2026-07-23T05:48:20Z",
+          "accounting_standard": "CAS",
+          "currency": "CNY",
+          "unit": "million",
+          "derived": [
+            "cf.net_income=is.net_income"
+          ],
+          "field_sources": {
+            "revenue": "akshare",
+            "cogs": "akshare",
+            "gross_profit": "akshare",
+            "operating_income": "akshare",
+            "net_income": "akshare",
+            "ocf": "akshare",
+            "total_assets": "akshare",
+            "total_liabilities": "akshare",
+            "equity": "akshare",
+            "current_assets": "akshare",
+            "current_liabilities": "akshare",
+            "inventory": "akshare",
+            "accounts_receivable": "akshare",
+            "cash": "akshare",
+            "total_debt": "akshare"
+          }
+        },
+        "income_statement": {
+          "revenue": 729.0346230499999,
+          "cogs": 249.62235363999997,
+          "gross_profit": 479.41226940999996,
+          "operating_income": -1324.25125457,
+          "net_income": -1256.35313985
+        },
+        "balance_sheet": {
+          "cash": 2467.30970585,
+          "accounts_receivable": 765.60887589,
+          "inventory": 287.12149351,
+          "current_assets": 4255.15951288,
+          "total_assets": 5770.82163613,
+          "current_liabilities": 542.14465904,
+          "total_debt": 104.63766278,
+          "total_liabilities": 831.1007361000001,
+          "equity": 4854.89328409
+        },
+        "cash_flow": {
+          "ocf": -1329.86109004,
+          "net_income": -1256.35313985
+        }
+      },
+      {
+        "period": "2021FY",
+        "_meta": {
+          "source": "akshare",
+          "as_of": "2026-07-23T05:48:20Z",
+          "accounting_standard": "CAS",
+          "currency": "CNY",
+          "unit": "million",
+          "derived": [
+            "cf.net_income=is.net_income"
+          ],
+          "field_sources": {
+            "revenue": "akshare",
+            "cogs": "akshare",
+            "gross_profit": "akshare",
+            "operating_income": "akshare",
+            "net_income": "akshare",
+            "ocf": "akshare",
+            "total_assets": "akshare",
+            "total_liabilities": "akshare",
+            "equity": "akshare",
+            "current_assets": "akshare",
+            "current_liabilities": "akshare",
+            "inventory": "akshare",
+            "accounts_receivable": "akshare",
+            "cash": "akshare",
+            "total_debt": "akshare"
+          }
+        },
+        "income_statement": {
+          "revenue": 721.04527897,
+          "cogs": 271.15066379,
+          "gross_profit": 449.89461518,
+          "operating_income": -824.20852311,
+          "net_income": -824.94940911
+        },
+        "balance_sheet": {
+          "cash": 2920.8458454499996,
+          "accounts_receivable": 478.03510167,
+          "inventory": 287.02979325,
+          "current_assets": 6170.81469238,
+          "total_assets": 6989.1463208800005,
+          "current_liabilities": 502.59629101,
+          "total_debt": 95.10862443,
+          "total_liabilities": 1008.9348555,
+          "equity": 5890.95727458
+        },
+        "cash_flow": {
+          "ocf": -873.14019994,
+          "net_income": -824.94940911
+        }
+      },
+      {
+        "period": "2020FY",
+        "_meta": {
+          "source": "akshare",
+          "as_of": "2026-07-23T05:48:20Z",
+          "accounting_standard": "CAS",
+          "currency": "CNY",
+          "unit": "million",
+          "derived": [
+            "cf.net_income=is.net_income"
+          ],
+          "field_sources": {
+            "revenue": "akshare",
+            "cogs": "akshare",
+            "gross_profit": "akshare",
+            "operating_income": "akshare",
+            "net_income": "akshare",
+            "ocf": "akshare",
+            "total_assets": "akshare",
+            "total_liabilities": "akshare",
+            "equity": "akshare",
+            "current_assets": "akshare",
+            "current_liabilities": "akshare",
+            "inventory": "akshare",
+            "accounts_receivable": "akshare",
+            "cash": "akshare",
+            "total_debt": "akshare"
+          }
+        },
+        "income_statement": {
+          "revenue": 458.92733067,
+          "cogs": 158.86996104,
+          "gross_profit": 300.05736963000004,
+          "operating_income": -434.45979158999995,
+          "net_income": -434.50933116000004
+        },
+        "balance_sheet": {
+          "cash": 4875.28835588,
+          "accounts_receivable": 207.64623935,
+          "inventory": 90.61844354,
+          "current_assets": 6877.29290412,
+          "total_assets": 7309.528671659999,
+          "current_liabilities": 400.57421332,
+          "total_debt": 0.0,
+          "total_liabilities": 878.02743909,
+          "equity": 6431.50123257
+        },
+        "cash_flow": {
+          "ocf": -132.14798790999998,
+          "net_income": -434.50933116000004
+        }
+      },
+      {
+        "period": "2019FY",
+        "_meta": {
+          "source": "akshare",
+          "as_of": "2026-07-23T05:48:20Z",
+          "accounting_standard": "CAS",
+          "currency": "CNY",
+          "unit": "million",
+          "derived": [
+            "cf.net_income=is.net_income"
+          ],
+          "field_sources": {
+            "revenue": "akshare",
+            "cogs": "akshare",
+            "gross_profit": "akshare",
+            "operating_income": "akshare",
+            "net_income": "akshare",
+            "ocf": "akshare",
+            "total_assets": "akshare",
+            "total_liabilities": "akshare",
+            "equity": "akshare",
+            "current_assets": "akshare",
+            "current_liabilities": "akshare",
+            "inventory": "akshare",
+            "accounts_receivable": "akshare",
+            "cash": "akshare",
+            "total_debt": "akshare"
+          }
+        },
+        "income_statement": {
+          "revenue": 443.93846582,
+          "cogs": 141.22537244,
+          "gross_profit": 302.71309338,
+          "operating_income": -1178.3171925,
+          "net_income": -1178.98564953
+        },
+        "balance_sheet": {
+          "cash": 383.30868043,
+          "accounts_receivable": 64.60865482,
+          "inventory": 51.065453409999996,
+          "current_assets": 4451.241130779999,
+          "total_assets": 4668.472281560001,
+          "current_liabilities": 237.97507496,
+          "total_debt": 0.0,
+          "total_liabilities": 311.99277279,
+          "equity": 4356.47950877
+        },
+        "cash_flow": {
+          "ocf": -201.79604015,
+          "net_income": -1178.98564953
+        }
+      },
+      {
+        "period": "2018FY",
+        "_meta": {
+          "source": "akshare",
+          "as_of": "2026-07-23T05:48:20Z",
+          "accounting_standard": "CAS",
+          "currency": "CNY",
+          "unit": "million",
+          "derived": [
+            "cf.net_income=is.net_income"
+          ],
+          "field_sources": {
+            "revenue": "akshare",
+            "cogs": "akshare",
+            "gross_profit": "akshare",
+            "operating_income": "akshare",
+            "net_income": "akshare",
+            "ocf": "akshare",
+            "total_assets": "akshare",
+            "total_liabilities": "akshare",
+            "equity": "akshare",
+            "current_assets": "akshare",
+            "current_liabilities": "akshare",
+            "inventory": "akshare",
+            "accounts_receivable": "akshare",
+            "cash": "akshare",
+            "total_debt": "akshare"
+          }
+        },
+        "income_statement": {
+          "revenue": 117.02523876000001,
+          "cogs": 0.11714189,
+          "gross_profit": 116.90809687000001,
+          "operating_income": -41.33148421,
+          "net_income": -41.04650737
+        },
+        "balance_sheet": {
+          "cash": 1354.3748877,
+          "accounts_receivable": 32.6443766,
+          "inventory": 5.1485167999999994,
+          "current_assets": 2953.9440323000003,
+          "total_assets": 3041.45158047,
+          "current_liabilities": 2447.7744729899996,
+          "total_debt": 0.0,
+          "total_liabilities": 2530.80919133,
+          "equity": 510.64238914
+        },
+        "cash_flow": {
+          "ocf": -55.490474490000004,
+          "net_income": -41.04650737
+        }
+      },
+      {
+        "period": "2017FY",
+        "_meta": {
+          "source": "akshare",
+          "as_of": "2026-07-23T05:48:20Z",
+          "accounting_standard": "CAS",
+          "currency": "CNY",
+          "unit": "million",
+          "derived": [
+            "cf.net_income=is.net_income"
+          ],
+          "field_sources": {
+            "revenue": "akshare",
+            "cogs": "akshare",
+            "gross_profit": "akshare",
+            "operating_income": "akshare",
+            "net_income": "akshare",
+            "ocf": "akshare",
+            "total_assets": "akshare",
+            "total_liabilities": "akshare",
+            "equity": "akshare",
+            "current_assets": "akshare",
+            "current_liabilities": "akshare",
+            "inventory": "akshare",
+            "accounts_receivable": "akshare",
+            "cash": "akshare",
+            "total_debt": "akshare"
+          }
+        },
+        "income_statement": {
+          "revenue": 7.843274139999999,
+          "cogs": 0.003,
+          "gross_profit": 7.840274139999999,
+          "operating_income": -380.70041324,
+          "net_income": -380.70041324
+        },
+        "balance_sheet": {
+          "cash": 232.19620608000002,
+          "accounts_receivable": 4.41091302,
+          "inventory": 0.04940171,
+          "current_assets": 569.4340544500001,
+          "total_assets": 590.18461571,
+          "current_liabilities": 506.63927904,
+          "total_debt": 0.0,
+          "total_liabilities": 557.10804706,
+          "equity": 33.07656865
+        },
+        "cash_flow": {
+          "ocf": -23.52430781,
+          "net_income": -380.70041324
+        }
+      }
+    ],
+    "quarterly": [],
+    "coverage": {
+      "annual_years": 9,
+      "quarterly_periods": 0,
+      "missing_line_items": [
+        "rd_expense",
+        "sga_expense",
+        "interest_expense",
+        "interest_income",
+        "pretax_income",
+        "tax",
+        "minority_income",
+        "eps_basic",
+        "eps_diluted",
+        "shares_basic",
+        "shares_diluted",
+        "short_term_investments",
+        "ppe_net",
+        "goodwill",
+        "intangibles",
+        "accounts_payable",
+        "short_term_debt",
+        "long_term_debt",
+        "minority_interest",
+        "depreciation",
+        "stock_based_comp",
+        "change_in_wc",
+        "capex",
+        "icf",
+        "dividends_paid",
+        "buybacks",
+        "fcf"
+      ],
+      "sufficient_for_l2": true
+    }
+  }
+}

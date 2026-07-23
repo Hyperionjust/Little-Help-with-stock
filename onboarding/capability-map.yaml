@@ -1,0 +1,59 @@
+# 能力地图（双语）：用户问"你能做什么/帮助/怎么用"时的全景回答。
+# 按**场景**分组，不按功能——朋友想的是"我想知道这只股票值不值",不是"我要 rNPV 模块"。
+# SKILL.md 的引导层从这里取内容。
+
+version: "1.0"
+
+# 首触能力卡（每会话最多给一次）
+first_touch:
+  zh: |
+    我可以分析 A股 / 港股 / 美股个股，有三档深度：
+    1. **快速看一眼** — 估值贵不贵、赚的钱是不是真金白银、技术面位置。几分钟。
+    2. **投资速览** — 3-5 页 PDF，含估值对比、催化剂、产业链、情景分析。
+    3. **深度研报** — 25 页以上 PDF，含三表财务模型、DCF 估值、可比公司、敏感性。
+    医药股会自动加做管线 rNPV 估值和专利悬崖分析。想先按哪档来？
+  en: |
+    I can analyse listed companies in mainland China, Hong Kong and the US, at three depths:
+    1. **Quick look** — is it cheap, is the profit real cash, where's it trading. A few minutes.
+    2. **Tear sheet** — a 3-5 page PDF with peer comparison, catalysts, supply chain, scenarios.
+    3. **Full report** — 25+ pages with a 3-statement model, DCF, comparables, sensitivity.
+    Pharma names automatically get pipeline rNPV and patent-cliff analysis. Which would you like?
+
+# 场景分组（用户说"你能做什么"时给这个全景）
+scenarios:
+  - id: is_it_cheap
+    zh_title: 这只股票贵不贵
+    zh: 「茅台现在估值贵不贵」「比同行贵还是便宜」「历史上处于什么位置」
+    en_title: Is it cheap?
+    en: "\"Is Moutai's valuation stretched?\" \"Cheaper or dearer than peers?\""
+  - id: is_profit_real
+    zh_title: 赚的钱是不是真的
+    zh: 「它的利润是真金白银吗」「现金流跟得上利润吗」「有没有财务粉饰迹象」
+    en_title: Is the profit real?
+    en: "\"Is the profit backed by cash?\" \"Any signs of window-dressing?\""
+  - id: what_is_it_worth
+    zh_title: 这公司值多少钱
+    zh: 「给我做一份深度研报」「DCF 估值多少」「如果增速掉到 X% 会怎样」
+    en_title: What's it worth?
+    en: "\"Run a full DCF report\" \"What if growth falls to X%?\""
+  - id: vs_peers
+    zh_title: 跟同行比怎么样
+    zh: 「跟宁德时代对比」「同行都什么估值」「它的溢价合理吗」
+    en_title: Versus peers
+    en: "\"Compare with CATL\" \"Is its premium justified?\""
+  - id: pharma
+    zh_title: 医药/生物科技专项
+    zh: 「管线值多少」「专利到期影响多大」「rNPV 怎么算的」
+    en_title: Pharma / biotech
+    en: "\"What's the pipeline worth?\" \"Patent cliff impact?\" \"How is rNPV computed?\""
+
+# 熟练用户信号：命中即跳过基础引导（老手不用被念叨）
+expert_signals:
+  - "L2"
+  - "L1"
+  - "DCF"
+  - "WACC"
+  - "rNPV"
+  - "永续增长"
+  - "tear sheet"
+  - "敏感性"

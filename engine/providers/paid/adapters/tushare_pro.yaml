@@ -1,0 +1,53 @@
+# Tushare Pro 适配器（http）。
+# 注意：仓库里另有一个手写的 tushare_p.py（用 tushare SDK），二者可共存——
+# 有 TUSHARE_TOKEN 时两条路都会尝试，字段级 fallback 自动去重。本 YAML 演示
+# 声明式接法，也作为 http 型适配器的参照实现。
+#
+# 字段映射按 Tushare Pro 官方文档 daily_basic / income / balancesheet / cashflow 接口编写，
+# **首次接入请核对**（接口字段偶有调整）。
+name: tushare_pro
+display_name: Tushare Pro
+vendor: Tushare
+markets: [A]
+tier: 0
+accounting_standard: CAS
+
+auth:
+  method: env_token
+  env_var: TUSHARE_TOKEN
+
+transport:
+  kind: http
+  timeout_s: 20
+  # Tushare Pro 是 POST + JSON body 的 RPC 风格；此处按其 http 网关的 GET 兼容形式声明，
+  # 真实对接时若走 SDK 则由 tushare_p.py 承担，本 YAML 主要用于校验字段映射。
+  endpoints:
+    quote:
+      url: "http://api.tushare.pro/quote?ts_code={symbol}&token={token}"
+      response_root: "data"
+    financials:
+      url: "http://api.tushare.pro/income?ts_code={symbol}&token={token}"
+      response_root: "data.items"
+
+capabilities: [quote, financials, estimates]
+
+fields:
+  quote:
+    price:        { path: "close",        unit: native }
+    market_cap:   { path: "total_mv",     unit: "万元" }   # daily_basic.total_mv 单位万元
+    total_shares: { path: "total_share",  unit: "万股" }
+    float_shares: { path: "float_share",  unit: "万股" }
+  financials:
+    revenue:          { path: "total_revenue", unit: "元" }
+    operating_income: { path: "operate_profit", unit: "元" }
+    net_income:       { path: "n_income_attr_p", unit: "元" }
+    total_assets:     { path: "total_assets",   unit: "元" }
+    total_liabilities: { path: "total_liab",    unit: "元" }
+    equity:           { path: "total_hldr_eqy_exc_min_int", unit: "元" }
+    cash:             { path: "money_cap",      unit: "元" }
+    ocf:              { path: "n_cashflow_act", unit: "元" }
+    eps_diluted:      { path: "diluted_eps",    unit: native }
+
+quirks:
+  date_format: YYYYMMDD
+  ticker_suffix: { A: auto_sh_sz }

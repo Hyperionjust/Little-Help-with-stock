@@ -1,7 +1,10 @@
 MIT License
 
-Copyright (c) 2026 stock-metrics-pro author
-（上传前请把上一行替换为你的 GitHub 用户名或真实署名）
+Copyright (c) 2026 equity-research-suite（自研 engine 层，见 THIRD-PARTY-NOTICES.md）
+
+本 LICENSE 仅覆盖本产品的自研部分（engine 计算层、契约、分析与出版脚本，
+源自作者的 stock-metrics-pro，MIT）。产品中借鉴第三方方法的部分及其归属，
+详见 THIRD-PARTY-NOTICES.md。
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,5 +23,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
-本软件不构成投资建议。使用本软件产生的任何投资决策及其后果由使用者自行承担。

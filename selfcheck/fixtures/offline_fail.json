@@ -1,0 +1,74 @@
+{
+  "_snapshot_date": "2025-06-01",
+  "_provenance": "模拟断网：主源抛错，仅兜底 provider 拿到现价；市值/财报进 data_gaps。",
+  "resolution": {
+    "market": "A",
+    "symbol": "600519",
+    "name": "贵州茅台",
+    "currency": "CNY",
+    "exchange": "SSE",
+    "industry_tag": "申万-食品饮料-白酒",
+    "is_pharma": false,
+    "benchmark_index": "沪深300"
+  },
+  "quote": {
+    "source": "baostock.fallback",
+    "as_of": "2025-06-01",
+    "price": 1548.0,
+    "market_cap": null,
+    "prev_close": null,
+    "float_shares": null,
+    "cross_source": {
+      "prices": {
+        "baostock": 1548.0
+      }
+    }
+  },
+  "financials": {
+    "source": "none",
+    "annual": []
+  },
+  "kline": {
+    "adjust": "none",
+    "source": "baostock.fallback",
+    "as_of": "2025-06-01",
+    "dates": [],
+    "open": [],
+    "high": [],
+    "low": [],
+    "close": [],
+    "volume": []
+  },
+  "benchmark_kline": {
+    "close": []
+  },
+  "dividend": {
+    "source": "none"
+  },
+  "estimates": {
+    "source": "none"
+  },
+  "data_gaps": [
+    {
+      "field": "market_cap",
+      "reason": "akshare/efinance 超时，baostock 无市值接口",
+      "providers_tried": [
+        "akshare",
+        "efinance",
+        "baostock"
+      ]
+    },
+    {
+      "field": "financials",
+      "reason": "全部财务源超时",
+      "providers_tried": [
+        "akshare",
+        "efinance",
+        "baostock"
+      ]
+    }
+  ],
+  "field_sources": {
+    "price": "baostock.query_history_k_data"
+  }
+}

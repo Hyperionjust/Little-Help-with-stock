@@ -1,0 +1,48 @@
+# Wind 导出文件适配器（file_drop）——统一了原 import_local 的能力（方案 §12.1）。
+#
+# 用户手上有 Wind 导出的财报表（xlsx/csv）时，把文件路径放进 ERS_IMPORT_FILE 环境变量，
+# 本适配器即以 Tier-0 接入。导出文件的列名千差万别，故用 aliases（别名列表）匹配表头，
+# 而非固定 path。中英别名都列上，覆盖 Wind 中文界面与英文界面两种导出。
+name: wind_export
+display_name: Wind 导出文件
+vendor: Wind（万得）
+markets: [A, HK, US]
+tier: 0
+accounting_standard: CAS
+
+auth:
+  method: file_drop
+  path_env: ERS_IMPORT_FILE
+
+transport:
+  kind: file_drop
+  formats: [xlsx, csv]
+  # 导出常见两种布局，适配器都尝试：每行一个期间 / 字段为行期间为列（转置）
+  sheet_hint: ["利润表", "资产负债表", "现金流量表", "Income Statement", "Balance Sheet"]
+
+capabilities: [financials, quote]
+
+fields:
+  quote:
+    price:      { aliases: ["最新价", "收盘价", "现价", "Close", "Last Price"], unit: native }
+    market_cap: { aliases: ["总市值", "市值", "Market Cap", "Total MV"], unit: "元" }
+  financials:
+    revenue:           { aliases: ["营业总收入", "营业收入", "Revenue", "Total Revenue", "Operating Revenue"], unit: "元" }
+    cogs:              { aliases: ["营业成本", "Cost of Revenue", "COGS"], unit: "元" }
+    gross_profit:      { aliases: ["毛利", "毛利润", "Gross Profit"], unit: "元" }
+    operating_income:  { aliases: ["营业利润", "Operating Income", "Operating Profit"], unit: "元" }
+    net_income:        { aliases: ["归母净利润", "归属母公司股东的净利润", "净利润", "Net Income", "Net Profit"], unit: "元" }
+    total_assets:      { aliases: ["资产总计", "总资产", "Total Assets"], unit: "元" }
+    total_liabilities: { aliases: ["负债合计", "总负债", "Total Liabilities"], unit: "元" }
+    equity:            { aliases: ["归属母公司股东权益合计", "股东权益合计", "净资产", "Total Equity", "Shareholders Equity"], unit: "元" }
+    current_assets:    { aliases: ["流动资产合计", "Current Assets"], unit: "元" }
+    current_liabilities: { aliases: ["流动负债合计", "Current Liabilities"], unit: "元" }
+    inventory:         { aliases: ["存货", "Inventory"], unit: "元" }
+    accounts_receivable: { aliases: ["应收账款", "Accounts Receivable"], unit: "元" }
+    cash:              { aliases: ["货币资金", "Cash and Equivalents", "Cash"], unit: "元" }
+    total_debt:        { aliases: ["有息负债", "带息债务", "Total Debt"], unit: "元" }
+    ocf:               { aliases: ["经营活动产生的现金流量净额", "经营活动现金流量净额", "Operating Cash Flow", "CFO"], unit: "元" }
+    capex:             { aliases: ["购建固定资产、无形资产和其他长期资产支付的现金", "资本开支", "Capex"], unit: "元" }
+    eps_diluted:       { aliases: ["稀释每股收益", "每股收益", "Diluted EPS", "EPS"], unit: native }
+    interest_expense:  { aliases: ["利息费用", "财务费用-利息支出", "Interest Expense"], unit: "元" }
+    effective_tax_rate: { aliases: ["实际税率", "有效税率", "Effective Tax Rate"], unit: native }

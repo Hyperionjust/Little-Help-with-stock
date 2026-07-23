@@ -1,0 +1,1861 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://equity-research-suite.local/analysis.schema.json",
+  "title": "equity-research-suite — analysis.json（引擎 → 分析师 契约）",
+  "description": "唯一数据真源。Markdown/HTML/Excel/PDF 全部由它渲染，分析师层只能从它取数。v1.0 相对 stock-metrics-pro v0：新增 statements/segments/peers/estimates/capital_structure 五块，并吸收 xtt datasource-router 的溯源模型（connector_status / fallback_trail / evidence_class / lineage）。新增块暂不列入 required——引擎按阶段逐步产出，但一旦出现就必须合规。",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "meta",
+    "resolution",
+    "quote",
+    "valuation",
+    "profitability",
+    "reverse_validation",
+    "solvency",
+    "growth",
+    "technicals",
+    "quality_report",
+    "data_gaps"
+  ],
+  "additionalProperties": true,
+  "definitions": {
+    "annotated_value": {
+      "type": "object",
+      "description": "Three-part provenance: source name, collection timestamp, formula/basis.",
+      "required": [
+        "value",
+        "source",
+        "as_of",
+        "formula"
+      ],
+      "properties": {
+        "value": {
+          "type": [
+            "number",
+            "string",
+            "null"
+          ]
+        },
+        "source": {
+          "type": "string",
+          "description": "provider.interface, e.g. 'akshare.stock_zh_a_hist'"
+        },
+        "as_of": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "ISO8601 collection/data timestamp"
+        },
+        "formula": {
+          "type": "string",
+          "description": "计算公式或口径说明"
+        },
+        "unit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "period": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "报告期区间, e.g. 'TTM 2023Q4-2024Q3'"
+        }
+      },
+      "additionalProperties": true
+    },
+    "pharma_assumption": {
+      "type": "object",
+      "required": [
+        "value",
+        "source",
+        "as_of",
+        "formula",
+        "source_type"
+      ],
+      "properties": {
+        "value": {
+          "type": [
+            "number",
+            "string",
+            "null"
+          ]
+        },
+        "source": {
+          "type": "string"
+        },
+        "as_of": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "formula": {
+          "type": "string"
+        },
+        "unit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source_type": {
+          "type": "string",
+          "enum": [
+            "hard",
+            "benchmark",
+            "user_assumption"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "connector_status": {
+      "type": "string",
+      "description": "Connector 诚实规则：这个数据到底是真调到了、只有接口描述、用户手填、还是压根没有。",
+      "enum": [
+        "live_provider",
+        "contract_only",
+        "user_supplied",
+        "missing_required_source"
+      ]
+    },
+    "evidence_class": {
+      "type": "string",
+      "description": "证据分级。engine 层用 hard/benchmark/user_assumption 做门禁，此处为对外溯源展示口径。",
+      "enum": [
+        "official_record",
+        "provider_observation",
+        "provider_estimate",
+        "user_input",
+        "derived_value",
+        "stale_value",
+        "disputed",
+        "unresolved"
+      ]
+    },
+    "lineage_item": {
+      "type": "object",
+      "description": "字段级血缘。source_unit 与集中化单位归一化配套（方案 §4.3）。",
+      "required": [
+        "field",
+        "dataset",
+        "retrieved_at"
+      ],
+      "properties": {
+        "field": {
+          "type": "string"
+        },
+        "provider_field": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "上游原始字段名"
+        },
+        "dataset": {
+          "type": "string"
+        },
+        "retrieved_at": {
+          "type": "string"
+        },
+        "effective_date": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "数据本身的口径日期，非采集日期"
+        },
+        "source_currency": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source_unit": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "归一化前的原始单位，如 元/亿元/million"
+        },
+        "evidence_class": {
+          "$ref": "#/definitions/evidence_class"
+        },
+        "transformation_note": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "fallback_item": {
+      "type": "object",
+      "description": "源切换记录。永远在场——源的变更绝不静默。",
+      "required": [
+        "planned_provider",
+        "actual_provider"
+      ],
+      "properties": {
+        "field_group": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "planned_provider": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "actual_provider": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "coverage_limitations": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "diagnostic": {
+      "type": "object",
+      "description": "结构化诊断对象（方案 §12.2）。user_action_* 同时是引导层在失败路径上的内容源。",
+      "required": [
+        "layer",
+        "stage",
+        "code",
+        "severity"
+      ],
+      "properties": {
+        "layer": {
+          "type": "string",
+          "enum": [
+            "engine",
+            "analyst",
+            "publisher"
+          ]
+        },
+        "stage": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string",
+          "description": "稳定错误码，见 references/error-codes.json"
+        },
+        "severity": {
+          "type": "string",
+          "enum": [
+            "critical",
+            "warning",
+            "info"
+          ]
+        },
+        "message_zh": {
+          "type": "string"
+        },
+        "message_en": {
+          "type": "string"
+        },
+        "evidence": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "agent_action": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "约束 LLM：该重试/换源/降级/停止"
+        },
+        "user_action_zh": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "告诉用户他能做什么——把死路变岔路"
+        },
+        "user_action_en": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "retriable": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    },
+    "statement_period": {
+      "type": "object",
+      "required": [
+        "period",
+        "_meta"
+      ],
+      "properties": {
+        "period": {
+          "type": "string",
+          "description": "如 2024FY / 2025Q1"
+        },
+        "_meta": {
+          "type": "object",
+          "required": [
+            "source",
+            "as_of",
+            "currency",
+            "unit"
+          ],
+          "properties": {
+            "source": {
+              "type": "string"
+            },
+            "as_of": {
+              "type": "string"
+            },
+            "accounting_standard": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "enum": [
+                "CAS",
+                "IFRS",
+                "US_GAAP",
+                null
+              ]
+            },
+            "currency": {
+              "type": "string"
+            },
+            "unit": {
+              "type": "string",
+              "enum": [
+                "ones",
+                "thousands",
+                "million",
+                "billion"
+              ],
+              "description": "归一化后的统一单位；原始单位记在 lineage.source_unit"
+            },
+            "evidence_class": {
+              "$ref": "#/definitions/evidence_class"
+            }
+          },
+          "additionalProperties": true
+        },
+        "income_statement": {
+          "type": "object",
+          "properties": {
+            "revenue": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "cogs": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "gross_profit": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "rd_expense": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "sga_expense": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "operating_income": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "interest_expense": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "interest_income": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "pretax_income": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "tax": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "net_income": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "minority_income": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "eps_basic": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "eps_diluted": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "shares_basic": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "shares_diluted": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": true
+        },
+        "balance_sheet": {
+          "type": "object",
+          "properties": {
+            "cash": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "short_term_investments": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "accounts_receivable": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "inventory": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "current_assets": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "ppe_net": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "goodwill": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "intangibles": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "total_assets": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "accounts_payable": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "short_term_debt": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "current_liabilities": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "long_term_debt": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "total_debt": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "total_liabilities": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "minority_interest": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "equity": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": true
+        },
+        "cash_flow": {
+          "type": "object",
+          "properties": {
+            "net_income": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "depreciation_amortization": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "stock_based_comp": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "change_in_wc": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "ocf": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "capex": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "icf": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "dividends_paid": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "buybacks": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "fcf": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.1.0"
+    },
+    "meta": {
+      "type": "object",
+      "required": [
+        "generated_at",
+        "generator",
+        "adjust_mode",
+        "disclaimer"
+      ],
+      "properties": {
+        "generated_at": {
+          "type": "string"
+        },
+        "generator": {
+          "type": "string"
+        },
+        "adjust_mode": {
+          "type": "string",
+          "enum": [
+            "qfq",
+            "hfq",
+            "none",
+            "unknown"
+          ],
+          "description": "复权口径；none/unknown 触发 warning"
+        },
+        "accounting_standard": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "CAS",
+            "IFRS",
+            "US_GAAP",
+            null
+          ]
+        },
+        "base_currency": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "disclaimer": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "resolution": {
+      "type": "object",
+      "required": [
+        "market",
+        "symbol",
+        "name",
+        "currency",
+        "exchange",
+        "is_pharma"
+      ],
+      "properties": {
+        "market": {
+          "type": "string",
+          "enum": [
+            "A",
+            "HK",
+            "US"
+          ]
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "currency": {
+          "type": "string"
+        },
+        "exchange": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "industry_tag": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "is_pharma": {
+          "type": "boolean"
+        },
+        "benchmark_index": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "quote": {
+      "type": "object",
+      "required": [
+        "price",
+        "market_cap"
+      ],
+      "properties": {
+        "price": {
+          "$ref": "#/definitions/annotated_value"
+        },
+        "market_cap": {
+          "$ref": "#/definitions/annotated_value"
+        },
+        "prev_close": {
+          "$ref": "#/definitions/annotated_value"
+        },
+        "cross_source_check": {
+          "type": "object",
+          "description": "跨源价格校验",
+          "properties": {
+            "sources": {
+              "type": "object"
+            },
+            "max_rel_diff": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "passed": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "valuation": {
+      "type": "object",
+      "properties": {
+        "pe_ttm": {
+          "$ref": "#/definitions/annotated_value"
+        },
+        "pe_static": {
+          "$ref": "#/definitions/annotated_value"
+        },
+        "pe_forward": {
+          "$ref": "#/definitions/annotated_value"
+        },
+        "pb": {
+          "$ref": "#/definitions/annotated_value"
+        },
+        "ps_ttm": {
+          "$ref": "#/definitions/annotated_value"
+        },
+        "peg": {
+          "$ref": "#/definitions/annotated_value"
+        },
+        "ev_ebitda": {
+          "$ref": "#/definitions/annotated_value"
+        },
+        "dividend_yield": {
+          "$ref": "#/definitions/annotated_value"
+        },
+        "default_pe_basis": {
+          "type": "string",
+          "enum": [
+            "ttm",
+            "static",
+            "forward"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "profitability": {
+      "type": "object",
+      "properties": {
+        "roe": {
+          "$ref": "#/definitions/annotated_value"
+        },
+        "roa": {
+          "$ref": "#/definitions/annotated_value"
+        },
+        "roic": {
+          "$ref": "#/definitions/annotated_value"
+        },
+        "gross_margin": {
+          "$ref": "#/definitions/annotated_value"
+        },
+        "net_margin": {
+          "$ref": "#/definitions/annotated_value"
+        },
+        "cash_content": {
+          "$ref": "#/definitions/annotated_value"
+        },
+        "dupont": {
+          "type": "object",
+          "description": "杜邦三分解，三因子乘积应≈ROE",
+          "properties": {
+            "net_margin": {
+              "$ref": "#/definitions/annotated_value"
+            },
+            "asset_turnover": {
+              "$ref": "#/definitions/annotated_value"
+            },
+            "equity_multiplier": {
+              "$ref": "#/definitions/annotated_value"
+            },
+            "product_check": {
+              "$ref": "#/definitions/annotated_value"
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "reverse_validation": {
+      "type": "object",
+      "description": "逆向验证：揭示利润好看但现金流/资产质量恶化",
+      "properties": {
+        "ar_vs_revenue_growth": {
+          "$ref": "#/definitions/annotated_value"
+        },
+        "inventory_vs_revenue_growth": {
+          "$ref": "#/definitions/annotated_value"
+        },
+        "ocf_ni_divergence_3y": {
+          "$ref": "#/definitions/annotated_value"
+        },
+        "flags": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "solvency": {
+      "type": "object",
+      "properties": {
+        "debt_to_asset": {
+          "$ref": "#/definitions/annotated_value"
+        },
+        "current_ratio": {
+          "$ref": "#/definitions/annotated_value"
+        },
+        "quick_ratio": {
+          "$ref": "#/definitions/annotated_value"
+        },
+        "interest_coverage": {
+          "$ref": "#/definitions/annotated_value"
+        },
+        "ar_days": {
+          "$ref": "#/definitions/annotated_value"
+        },
+        "inventory_days": {
+          "$ref": "#/definitions/annotated_value"
+        }
+      },
+      "additionalProperties": true
+    },
+    "growth": {
+      "type": "object",
+      "properties": {
+        "revenue_yoy": {
+          "$ref": "#/definitions/annotated_value"
+        },
+        "net_income_yoy": {
+          "$ref": "#/definitions/annotated_value"
+        },
+        "revenue_qoq": {
+          "$ref": "#/definitions/annotated_value"
+        },
+        "revenue_cagr_3y": {
+          "$ref": "#/definitions/annotated_value"
+        },
+        "revenue_cagr_5y": {
+          "$ref": "#/definitions/annotated_value"
+        },
+        "net_income_cagr_3y": {
+          "$ref": "#/definitions/annotated_value"
+        }
+      },
+      "additionalProperties": true
+    },
+    "technicals": {
+      "type": "object",
+      "properties": {
+        "moving_averages": {
+          "type": "object"
+        },
+        "ma_alignment": {
+          "$ref": "#/definitions/annotated_value"
+        },
+        "macd": {
+          "type": "object"
+        },
+        "rsi": {
+          "type": "object"
+        },
+        "kdj": {
+          "type": "object"
+        },
+        "bias": {
+          "type": "object"
+        },
+        "atr": {
+          "$ref": "#/definitions/annotated_value"
+        },
+        "volatility_20d": {
+          "$ref": "#/definitions/annotated_value"
+        },
+        "volume_ratio": {
+          "$ref": "#/definitions/annotated_value"
+        },
+        "turnover_rate": {
+          "$ref": "#/definitions/annotated_value"
+        },
+        "relative_strength": {
+          "type": "object"
+        },
+        "support_resistance": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": true
+    },
+    "pharma": {
+      "type": "object",
+      "description": "仅医药标的存在",
+      "required": [
+        "paradigm",
+        "rnpv",
+        "pipeline",
+        "human_verification_checklist"
+      ],
+      "properties": {
+        "paradigm": {
+          "type": "string",
+          "enum": [
+            "commercial",
+            "clinical_biotech",
+            "large_pharma_sotp"
+          ]
+        },
+        "clinical_discount_rate": {
+          "$ref": "#/definitions/pharma_assumption"
+        },
+        "wacc_general": {
+          "$ref": "#/definitions/annotated_value"
+        },
+        "double_penalty_check": {
+          "type": "object",
+          "required": [
+            "clinical_rate_is_independent",
+            "passed"
+          ],
+          "properties": {
+            "clinical_rate_is_independent": {
+              "type": "boolean"
+            },
+            "clinical_rate": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "wacc": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "passed": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": true
+        },
+        "rnpv": {
+          "type": "object",
+          "required": [
+            "company_rnpv",
+            "assets"
+          ],
+          "properties": {
+            "company_rnpv": {
+              "$ref": "#/definitions/annotated_value"
+            },
+            "net_cash": {
+              "$ref": "#/definitions/annotated_value"
+            },
+            "debt": {
+              "$ref": "#/definitions/annotated_value"
+            },
+            "sum_asset_rnpv": {
+              "$ref": "#/definitions/annotated_value"
+            },
+            "assets": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "asset",
+                  "indication",
+                  "current_phase",
+                  "cumulative_pos",
+                  "asset_rnpv"
+                ],
+                "properties": {
+                  "asset": {
+                    "type": "string"
+                  },
+                  "indication": {
+                    "type": "string"
+                  },
+                  "current_phase": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "therapeutic_area": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "peak_sales": {
+                    "$ref": "#/definitions/pharma_assumption"
+                  },
+                  "cumulative_pos": {
+                    "$ref": "#/definitions/pharma_assumption"
+                  },
+                  "penetration": {
+                    "$ref": "#/definitions/pharma_assumption"
+                  },
+                  "asset_rnpv": {
+                    "$ref": "#/definitions/annotated_value"
+                  },
+                  "stage_breakdown": {
+                    "type": "array",
+                    "items": {
+                      "type": "object"
+                    }
+                  }
+                },
+                "additionalProperties": true
+              }
+            }
+          },
+          "additionalProperties": true
+        },
+        "sensitivity": {
+          "type": "object",
+          "description": "tornado 单因素敏感性"
+        },
+        "pipeline": {
+          "type": "object",
+          "required": [
+            "trials",
+            "total_count"
+          ],
+          "properties": {
+            "total_count": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "trials": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            },
+            "terminated": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            }
+          },
+          "additionalProperties": true
+        },
+        "loe": {
+          "type": "object",
+          "description": "专利悬崖/瀑布"
+        },
+        "catalysts": {
+          "type": "object",
+          "description": "未来12-24个月催化剂（已按 as_of 过滤，剔除过期）。窗口与剔除计数一并给出。",
+          "properties": {
+            "window": {
+              "type": "string"
+            },
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            },
+            "dropped_out_of_window": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": true
+        },
+        "human_verification_checklist": {
+          "type": "array",
+          "description": "🔴 需人工核对清单：所有 user_assumption 必须在此逐项列出",
+          "items": {
+            "type": "object",
+            "required": [
+              "item",
+              "value",
+              "source_type",
+              "impact_on_rnpv"
+            ],
+            "properties": {
+              "item": {
+                "type": "string"
+              },
+              "value": {
+                "type": [
+                  "number",
+                  "string",
+                  "null"
+                ]
+              },
+              "source_type": {
+                "type": "string",
+                "enum": [
+                  "hard",
+                  "benchmark",
+                  "user_assumption"
+                ]
+              },
+              "impact_on_rnpv": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "illustrative_warning": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "峰值销售多数落默认常数时的诚实性警告（数量级示意非目标价）"
+        }
+      },
+      "additionalProperties": true
+    },
+    "quality_report": {
+      "type": "object",
+      "required": [
+        "passed",
+        "degraded",
+        "critical",
+        "warning"
+      ],
+      "properties": {
+        "passed": {
+          "type": "boolean"
+        },
+        "degraded": {
+          "type": "boolean",
+          "description": "true=只出降级报告"
+        },
+        "critical": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "check",
+              "message"
+            ]
+          }
+        },
+        "warning": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "check",
+              "message"
+            ]
+          }
+        },
+        "field_coverage": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "data_gaps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "field",
+          "reason"
+        ],
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "providers_tried": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "statements": {
+      "type": "object",
+      "description": "三表历史。coverage.missing_line_items 必须诚实列出缺项——model_builder 遇关键缺项时拒绝建模并降级 L1，不得补零。",
+      "properties": {
+        "annual": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/statement_period"
+          }
+        },
+        "quarterly": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/statement_period"
+          }
+        },
+        "coverage": {
+          "type": "object",
+          "required": [
+            "annual_years",
+            "quarterly_periods",
+            "missing_line_items"
+          ],
+          "properties": {
+            "annual_years": {
+              "type": "integer"
+            },
+            "quarterly_periods": {
+              "type": "integer"
+            },
+            "missing_line_items": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "sufficient_for_l2": {
+              "type": "boolean",
+              "description": "是否足以支撑三表建模+DCF"
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "segments": {
+      "type": "object",
+      "description": "分部收入（收入模型输入）。免费源基本拿不到；available=false 时收入模型降级为整体口径，禁止编造分部。",
+      "required": [
+        "available"
+      ],
+      "properties": {
+        "available": {
+          "type": "boolean"
+        },
+        "by_period": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "period",
+              "items"
+            ],
+            "properties": {
+              "period": {
+                "type": "string"
+              },
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "name",
+                    "revenue"
+                  ],
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "revenue": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "pct": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "gross_margin": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              },
+              "_source": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "_as_of": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "peers": {
+      "type": "object",
+      "description": "可比公司（全新能力，需 engine/peers.py 多标的取数）。stats 必须由脚本计算，且统一用中位数+分位数而非均值。",
+      "required": [
+        "available"
+      ],
+      "properties": {
+        "available": {
+          "type": "boolean"
+        },
+        "selection_basis": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "入选逻辑是交付物的一部分，必须写明"
+        },
+        "excluded": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "symbol": {
+                "type": "string"
+              },
+              "reason": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "symbol",
+              "name"
+            ],
+            "properties": {
+              "symbol": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "is_target": {
+                "type": "boolean"
+              },
+              "market": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "currency": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "market_cap": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "pe_ttm": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "pb": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "ps_ttm": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "ev_ebitda": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "revenue_cagr_3y": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "net_margin": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "_source": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "_as_of": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "stats": {
+          "type": "object",
+          "properties": {
+            "pe_ttm": {
+              "type": "object",
+              "properties": {
+                "max": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "p75": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "median": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "mean": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "p25": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "min": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "n": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              },
+              "additionalProperties": true
+            },
+            "pb": {
+              "type": "object",
+              "properties": {
+                "max": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "p75": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "median": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "mean": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "p25": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "min": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "n": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              },
+              "additionalProperties": true
+            },
+            "ps_ttm": {
+              "type": "object",
+              "properties": {
+                "max": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "p75": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "median": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "mean": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "p25": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "min": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "n": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              },
+              "additionalProperties": true
+            },
+            "ev_ebitda": {
+              "type": "object",
+              "properties": {
+                "max": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "p75": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "median": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "mean": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "p25": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "min": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "n": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "additionalProperties": true
+        },
+        "target_percentile": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "estimates": {
+      "type": "object",
+      "description": "一致预期。免费源不提供，available=false 时 pe_forward 恒为 null——这是诚实的 null，不是 bug。接入付费终端后自动填充。",
+      "required": [
+        "available"
+      ],
+      "properties": {
+        "available": {
+          "type": "boolean"
+        },
+        "fy1": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "fy2": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "_source": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "_note": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "capital_structure": {
+      "type": "object",
+      "description": "股东与资金面。喂六维分析的资金面异动维度（北向流出/大宗折价/减持视为知情资金信号）。",
+      "properties": {
+        "top_holders": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "pledge_ratio": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "northbound_holding_pct": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "northbound_change_20d": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "lockup_expiry": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "buybacks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "insider_sales": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "provenance": {
+      "type": "object",
+      "description": "全局溯源。fallback_trail 永远在场，即使没有发生切换（记录 no-fallback 情形）。",
+      "properties": {
+        "connector_status": {
+          "$ref": "#/definitions/connector_status"
+        },
+        "data_tier": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "0=付费终端/正式财报，1+=免费源"
+        },
+        "paid_adapter": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "lineage": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/lineage_item"
+          }
+        },
+        "fallback_trail": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/fallback_item"
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "diagnostics": {
+      "type": "array",
+      "description": "本次运行的全部结构化诊断（方案 §12.2）。",
+      "items": {
+        "$ref": "#/definitions/diagnostic"
+      }
+    }
+  }
+}

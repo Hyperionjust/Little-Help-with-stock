@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+.DS_Store
+
+# 运行产物
+*_analysis.json
+*_dashboard.html
+*_workbook.xlsx
+run_manifest.json
+out/

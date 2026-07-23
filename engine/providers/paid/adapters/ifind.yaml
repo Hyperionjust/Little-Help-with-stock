@@ -1,0 +1,43 @@
+# 同花顺 iFinD 适配器（http）。字段按 iFinD 数据接口公开文档编写，**首次接入请核对**。
+# iFinD 多为写文件型接口（结果落 CSV），若你的部署是这种形态，改用 file_drop 型
+# 或在 transport 里补 side_effect 处理——本 YAML 演示直连 JSON 网关的情形。
+name: ifind
+display_name: 同花顺 iFinD
+vendor: 同花顺
+markets: [A, HK, US]
+tier: 0
+accounting_standard: CAS
+
+auth:
+  method: env_token
+  env_var: IFIND_TOKEN
+
+transport:
+  kind: http
+  timeout_s: 30
+  endpoints:
+    quote:
+      url: "https://ft.10jqka.com.cn/api/v1/real_time_quotation?codes={symbol}&access_token={token}"
+      response_root: "tables"
+    financials:
+      url: "https://ft.10jqka.com.cn/api/v1/basic_data?codes={symbol}&access_token={token}"
+      response_root: "tables"
+
+capabilities: [quote, financials, estimates, segments]
+
+fields:
+  quote:
+    price:      { path: "latest",        unit: native }
+    market_cap: { path: "totalCapital",  unit: "元" }
+    prev_close: { path: "preClose",      unit: native }
+  financials:
+    revenue:          { path: "ths_revenue_stock",        unit: "元" }
+    operating_income: { path: "ths_op_profit_stock",      unit: "元" }
+    net_income:       { path: "ths_np_atsopc_stock",      unit: "元" }
+    total_assets:     { path: "ths_total_assets_stock",   unit: "元" }
+    equity:           { path: "ths_total_owner_equity_stock", unit: "元" }
+    ocf:              { path: "ths_ncf_from_oa_stock",    unit: "元" }
+
+quirks:
+  date_format: YYYYMMDD
+  note: "iFinD 接口偏向写 CSV；如遇写文件型返回，用 wind_export 同款 file_drop 方式接入更稳。"

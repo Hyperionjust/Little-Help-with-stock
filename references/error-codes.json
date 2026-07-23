@@ -1,0 +1,77 @@
+{
+  "_comment": "稳定错误码注册表（方案 §12.2）。agent_action 约束 LLM 的重试行为——该重试还是该换源、该降级还是该停；user_action 告诉用户他能做什么——把死路变成岔路。借鉴 xtt wind-mcp error-codes.json 的错误域约束重试模式。新增错误码必须在此登记，禁止在代码里散落裸字符串。",
+  "codes": {
+    "ALL_PROVIDERS_EMPTY": {
+      "layer": "engine", "severity": "critical", "retriable": false,
+      "agent_action": "不得重试同一链条。若为财务字段缺失可降级为年报口径或 L1；若行情也拿不到则终止并输出降级说明。",
+      "user_action_zh": "所有免费数据源都没有返回这只股票的数据。可能是代码拼写问题（试试完整代码如 600519 或 0700.HK），也可能是网络受限。你如果有 Wind/iFind 导出的财报文件，直接发给我即可继续。",
+      "user_action_en": "No free data source returned data for this ticker. Check the symbol format (e.g. 600519 or 0700.HK), or send me a Wind/iFind export file and I'll continue from that."
+    },
+    "PROVIDER_TIMEOUT": {
+      "layer": "engine", "severity": "warning", "retriable": true,
+      "agent_action": "该源已按指数退避重试过，勿再手动重试同一源。降级链会自动尝试下一源；仅当全链失败时升级为 ALL_PROVIDERS_EMPTY。",
+      "user_action_zh": "某个数据源响应超时，已自动切换备用源，不影响结果。如反复出现可稍后再试。",
+      "user_action_en": "A data source timed out; a fallback source was used automatically. Results are unaffected."
+    },
+    "CROSS_SOURCE_PRICE_MISMATCH": {
+      "layer": "engine", "severity": "critical", "retriable": false,
+      "agent_action": "不得自行挑选其中一个价格继续。输出降级报告并明确列出两个读数与来源，让用户判断。",
+      "user_action_zh": "两个独立数据源给出的收盘价差超过 1%，可能有一个源的数据有问题（停牌、除权未同步等）。报告已降级并列出两个读数——你可以指定采信哪个源，或稍后重试。",
+      "user_action_en": "Two independent sources disagree on the close price by >1%. The report is degraded and shows both readings — tell me which source to trust, or retry later."
+    },
+    "UNIT_DIMENSION_MISMATCH": {
+      "layer": "engine", "severity": "critical", "retriable": false,
+      "agent_action": "禁止继续计算任何估值比率——市值量纲错误会让 PE/PB/PS 错约 1e6 倍。终止并报告 provider 与字段。",
+      "user_action_zh": "检测到市值的单位换算异常（数据源可能混用了 元/万/亿）。这属于工具侧问题，请把这份 run_manifest.json 发给维护者修复；换一个时间重试有时也能避开出错的源。",
+      "user_action_en": "Market-cap unit mismatch detected (a source likely mixed 元/万/亿). Send run_manifest.json to the maintainer; retrying later may route around the faulty source."
+    },
+    "STALE_FINANCIALS": {
+      "layer": "engine", "severity": "critical", "retriable": false,
+      "agent_action": "报告必须降级并显著标注财报口径日期。不得用旧财报计算 forward 类指标。",
+      "user_action_zh": "最近一期财报距今超过 12 个月，比率是按旧财报算的（报告里已标注）。年报季后重试，或发我更新的财报文件。",
+      "user_action_en": "Latest filings are over 12 months old; ratios use stale data (flagged in the report). Retry after earnings season or send updated filings."
+    },
+    "HK_QUARTERLY_UNAVAILABLE": {
+      "layer": "engine", "severity": "warning", "retriable": false,
+      "agent_action": "降级为年报/半年报口径建模并在报告中声明。不得用内插伪造季度数据。",
+      "user_action_zh": "港股公司多为半年报披露，免费源拿不到季度财报。我用年报口径继续，精度打折已在报告声明。你有 Wind/iFind 导出的话发给我可用完整口径重算。",
+      "user_action_en": "HK issuers mostly file semi-annually; free sources lack quarterly data. Proceeding on annual figures (flagged). Send a Wind/iFind export to rerun at full granularity."
+    },
+    "INSUFFICIENT_FOR_L2": {
+      "layer": "analyst", "severity": "warning", "retriable": false,
+      "agent_action": "自动降级为 L1（可比公司+倍数），在 model.json 写 degraded_from_l2{reason,missing}。禁止补零硬做三表。",
+      "user_action_zh": "现有数据不够搭三表模型（缺 {missing}），我先按精简版（可比公司估值）出报告。想要完整 DCF 版：接入付费终端，或把终端导出的财报表发给我。",
+      "user_action_en": "Not enough data for a 3-statement model (missing {missing}). Producing the streamlined comps-based report; connect a paid terminal or send an export file for the full DCF version."
+    },
+    "CONTRACT_VIOLATION": {
+      "layer": "engine", "severity": "critical", "retriable": false,
+      "agent_action": "阻断。这是工具缺陷而非数据问题——引擎产出了不符合自身契约的结构。报告字段路径，不得绕过校验继续。",
+      "user_action_zh": "内部数据结构校验未通过，属工具缺陷。请把 run_manifest.json 发给维护者。",
+      "user_action_en": "Internal contract validation failed — a tool defect. Please send run_manifest.json to the maintainer."
+    },
+    "MODEL_INVARIANT_FAILED": {
+      "layer": "analyst", "severity": "critical", "retriable": false,
+      "agent_action": "阻断出版。逐条列出未通过的不变量（如资产负债表不平、概率和≠1、g≥WACC），修模型而不是改数字凑数。",
+      "user_action_zh": "财务模型没有通过自洽检查（{failed_invariants}），报告已暂停生成。这通常是数据异常或假设越界，我会先修正模型再继续。",
+      "user_action_en": "The financial model failed integrity checks ({failed_invariants}). Report generation paused while the model is corrected."
+    },
+    "RECONCILE_ORPHAN_NUMBER": {
+      "layer": "publisher", "severity": "critical", "retriable": false,
+      "agent_action": "阻断交付。逐条列出孤儿数字及其上下文。要么该数字确属计算产物但没进契约（补进 key_figures），要么是编造（删除并重写该句）。禁止加白名单蒙混。",
+      "user_action_zh": "交付前对账发现报告里有数字无法追溯到数据源（{orphans}），已拦下。正在修正——这道闸就是为保证你拿到的每个数字都有出处。",
+      "user_action_en": "Pre-delivery reconciliation found numbers that can't be traced to a source ({orphans}). Delivery blocked while this is fixed — this gate exists so every number you see has provenance."
+    },
+    "PHARMA_DOUBLE_PENALTY": {
+      "layer": "engine", "severity": "critical", "retriable": false,
+      "agent_action": "阻断。rNPV 必须使用独立 clinical_discount_rate，绝不复用通用 WACC——临床风险已由 PoS 扣除，重复计罚会把有价值管线算成一文不值。",
+      "user_action_zh": "医药估值检测到折现率重复计罚（工具侧缺陷），已拦下。请把 run_manifest.json 发给维护者。",
+      "user_action_en": "Pharma valuation double-penalty detected (tool defect). Blocked; please send run_manifest.json to the maintainer."
+    },
+    "DESKTOP_ONLY": {
+      "layer": "engine", "severity": "critical", "retriable": false,
+      "agent_action": "立即告知并停止，不得尝试降级运行。半途失败比一开始说清楚更浪费用户时间。",
+      "user_action_zh": "这个工具需要在 Claude 桌面版里运行（要装 Python 库、要联网抓行情），网页版跑不了。请在桌面应用里打开后再试。",
+      "user_action_en": "This tool requires the Claude desktop app — it installs Python packages and fetches live data, which the web version can't do."
+    }
+  }
+}

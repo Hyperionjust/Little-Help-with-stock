@@ -1,0 +1,36 @@
+# Bloomberg 适配器（cli / 本地终端）。
+# Bloomberg 数据须经本地 Terminal 或 BQL/blpapi，无法用简单 HTTP token 接入，
+# 故 transport.kind = cli，认证靠探测本地环境。真实对接需在运行环境安装 blpapi
+# 并把桥接脚本路径放进 BLOOMBERG_BRIDGE。此处为占位声明，字段映射已就位，
+# 待桥接脚本补上即可用。
+name: bloomberg
+display_name: Bloomberg Terminal
+vendor: Bloomberg
+markets: [A, HK, US]
+tier: 0
+accounting_standard: IFRS
+
+auth:
+  method: cli
+  probe_env: BLOOMBERG_BRIDGE      # 指向本地 blpapi 桥接脚本；存在即视为可用
+
+transport:
+  kind: cli
+  # 真实对接：把 blpapi 查询封装成一个命令行脚本，读 stdin 的 {symbol}，
+  # 输出标准 JSON。此处仅声明字段，命令细节待接入时补。
+
+capabilities: [quote, financials, estimates]
+
+fields:
+  quote:
+    price:      { path: "PX_LAST",             unit: native }
+    market_cap: { path: "CUR_MKT_CAP",         unit: million }   # Bloomberg 惯用百万计
+    prev_close: { path: "PX_PREV_CLOSE",       unit: native }
+  financials:
+    revenue:          { path: "SALES_REV_TURN",     unit: million }
+    operating_income: { path: "IS_OPER_INC",        unit: million }
+    net_income:       { path: "NET_INCOME",         unit: million }
+    total_assets:     { path: "BS_TOT_ASSET",       unit: million }
+    equity:           { path: "TOTAL_EQUITY",       unit: million }
+    ocf:              { path: "CF_CASH_FROM_OPER",  unit: million }
+    eps_diluted:      { path: "IS_DILUTED_EPS",     unit: native }

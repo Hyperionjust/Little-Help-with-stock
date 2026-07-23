@@ -1,0 +1,194 @@
+{# 投资速览模板。铁律：只呈现契约里已有的数字，模板内零算术——
+   所有格式化经 num/pct/yi 过滤器（render_pdf.py），所有数值可被闸3对账。 #}
+<!DOCTYPE html>
+<html lang="zh">
+<head><meta charset="utf-8"><title>{{ name }} 投资速览</title></head>
+<body>
+
+<div class="hdr-left">{{ issuer }} · 投资速览</div>
+<div class="hdr-right">{{ name }}（{{ symbol }}）</div>
+<div class="ftr-left">数据截至 {{ gen_date }} · 所有数字可溯源</div>
+
+{# ── 封面区 ─────────────────────────────────────────────── #}
+<div class="cover">
+  {% if logo %}<img class="cover-logo" src="{{ logo }}" alt="logo">{% endif %}
+  <h1>{{ name }} <span style="font-size:12pt;color:#6b7f96">{{ symbol }} · {{ market }}股</span></h1>
+  <div class="meta">{{ industry }} ｜ 生成日期 {{ gen_date }} ｜ 发布方 {{ issuer }}</div>
+
+  <div class="pricebar">
+    <div><span class="k">现价（{{ currency }}）</span><span class="v">{{ price|num }}</span></div>
+    <div><span class="k">总市值（亿）</span><span class="v">{{ mcap|yi }}</span></div>
+    <div><span class="k">PE {{ pe_period }}</span><span class="v">{{ pe|num(1) }}</span></div>
+    <div><span class="k">PB</span><span class="v">{{ pb|num(1) }}</span></div>
+    {% if m and m.vps %}
+    <div><span class="k">DCF每股</span><span class="v">{{ m.vps|num }}</span></div>
+    <div><span class="k">隐含空间</span><span class="v">{{ m.upside|pct }}</span></div>
+    {% endif %}
+  </div>
+</div>
+
+{# ── 关键警示（最重要的信息放最前面，不藏在报告尾部）────────── #}
+{% if degraded %}
+<div class="card risk"><h4>⛔ 本报告为降级版本</h4>
+  {% for c in gate_criticals %}<div>{{ c.message }}</div>{% endfor %}
+</div>
+{% endif %}
+{% if m %}{% for w in m.warnings %}
+<div class="card warn"><h4>⚠ {{ w.check }}</h4><div>{{ w.message }}</div></div>
+{% endfor %}{% endif %}
+
+{# ── 基本面速览 ─────────────────────────────────────────── #}
+<div class="section">
+<h2>基本面速览</h2>
+<div class="grid2">
+  <div>
+    <div class="kv"><span class="k">ROE</span><span class="v">{{ roe|num(1) }}%</span></div>
+    <div class="kv"><span class="k">净利率</span><span class="v">{{ net_margin|num(1) }}%</span></div>
+    <div class="kv"><span class="k">现金含量（OCF/净利）</span><span class="v">{{ cash_content|num }}</span></div>
+    <div class="kv"><span class="k">营收同比</span><span class="v">{{ rev_yoy|num(1) }}%</span></div>
+    <div class="kv"><span class="k">营收3年CAGR</span><span class="v">{{ rev_cagr3|num(1) }}%</span></div>
+    <div class="kv"><span class="k">PS-TTM</span><span class="v">{{ ps|num(1) }}</span></div>
+  </div>
+  <div>
+    {% if rv_flags %}
+    {% for f in rv_flags %}
+    <div class="card {% if f.level == 'red' %}risk{% elif f.level == 'yellow' %}warn{% endif %}" style="margin:0 0 1.5mm">
+      <h4>逆向验证 · {{ f.check }}</h4><div>{{ f.message }}</div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="card"><h4>逆向验证</h4><div>应收/存货/现金流三项背离检查未见红灯</div></div>
+    {% endif %}
+  </div>
+</div>
+<div class="src">数据源：{{ price_src }}（行情） · {{ fin_src }}（财报）</div>
+</div>
+
+{# ── 财务历史 ───────────────────────────────────────────── #}
+<div class="section keep">
+<h2>财务历史（百万{{ currency }}）</h2>
+<table>
+  <tr><th>报告期</th><th class="num">营业收入</th><th class="num">营业利润</th>
+      <th class="num">归母净利</th><th class="num">经营现金流</th></tr>
+  {% for r in hist_rows %}
+  <tr><td>{{ r.period }}</td>
+      <td class="num">{{ r.revenue|num(0) }}</td>
+      <td class="num">{{ r.op_income|num(0) }}</td>
+      <td class="num {% if r.net_income and r.net_income < 0 %}neg{% endif %}">{{ r.net_income|num(0) }}</td>
+      <td class="num">{{ r.ocf|num(0) }}</td></tr>
+  {% endfor %}
+</table>
+</div>
+
+{% if m %}
+{# ── 五年投影 ───────────────────────────────────────────── #}
+<div class="section keep">
+<h2>五年投影（百万{{ currency }}，投入资本框架）</h2>
+<table>
+  <tr><th>年度</th>{% for y in m.proj_years %}<th class="num forecast">{{ y }}</th>{% endfor %}</tr>
+  <tr><td>营业收入</td>{% for x in m.proj_rev %}<td class="num forecast">{{ x|num(0) }}</td>{% endfor %}</tr>
+  <tr><td>归母净利</td>{% for x in m.proj_ni %}<td class="num forecast">{{ x|num(0) }}</td>{% endfor %}</tr>
+  <tr><td>自由现金流</td>{% for x in m.proj_ufcf %}<td class="num forecast {% if x and x < 0 %}neg{% endif %}">{{ x|num(0) }}</td>{% endfor %}</tr>
+</table>
+<div class="src">E 列为预测值（米色底）。资产负债表恒等与现金勾稽已由脚本逐年断言（闸2）。</div>
+</div>
+
+{# ── DCF 估值 ───────────────────────────────────────────── #}
+<div class="section keep">
+<h2>DCF 估值</h2>
+<div class="grid2">
+  <div>
+    <div class="kv"><span class="k">WACC</span><span class="v">{{ m.wacc.wacc|pct(2) }}</span></div>
+    <div class="kv"><span class="k">　权益成本（rf {{ m.wacc.risk_free|pct(1) }} + β{{ m.wacc.beta|num(2) }}×ERP {{ m.wacc.erp|pct(1) }}）</span><span class="v">{{ m.wacc.cost_of_equity|pct(2) }}</span></div>
+    <div class="kv"><span class="k">永续增长 g</span><span class="v">{{ m.terminal.g|pct(1) }}</span></div>
+    <div class="kv"><span class="k">显式期现值</span><span class="v">{{ m.pv_explicit|yi }} 亿</span></div>
+    <div class="kv"><span class="k">终值现值（占EV {{ m.terminal.tv_pct_of_ev|pct(0) }}）</span><span class="v">{{ m.terminal.pv_tv|yi }} 亿</span></div>
+    <div class="kv"><span class="k">企业价值 EV</span><span class="v">{{ m.ev|yi }} 亿</span></div>
+  </div>
+  <div>
+    <div class="kv"><span class="k">− 净负债</span><span class="v">{{ m.bridge.less_net_debt|yi }} 亿</span></div>
+    <div class="kv"><span class="k">− 少数股东权益</span><span class="v">{{ m.bridge.less_minority|yi }} 亿</span></div>
+    <div class="kv"><span class="k">归母权益价值</span><span class="v">{{ m.equity_value|yi }} 亿</span></div>
+    <div class="kv"><span class="k">股本（百万股）</span><span class="v">{{ m.shares|num(0) }}</span></div>
+    <div class="kv"><span class="k">每股价值</span><span class="v">{{ m.vps|num }}</span></div>
+    <div class="kv"><span class="k">vs 现价 {{ price|num }}</span><span class="v">{{ m.upside|pct }}</span></div>
+  </div>
+</div>
+<div class="src">{{ m.bridge._formula }} · 期中折现已启用</div>
+</div>
+
+{# ── 情景与隐含预期（最有洞察的一节）─────────────────────── #}
+<div class="section keep">
+<h2>情景与市价隐含预期</h2>
+<table>
+  <tr><th>情景</th><th class="num">概率</th><th class="num">每股价值</th><th class="num">较现价</th><th>说明</th></tr>
+  {% for key, label in [('bull','乐观'), ('base','基准'), ('bear','悲观')] %}
+  {% set s = m.scen[key] %}
+  <tr><td>{{ label }}</td>
+      <td class="num">{{ s.probability|pct(0) }}</td>
+      <td class="num">{{ s.target|num if s.target is not none else '无解' }}</td>
+      <td class="num">{{ s.upside|pct if s.upside is not none else '—' }}</td>
+      <td style="font-size:7.5pt">{{ s.note or s.drivers or '' }}</td></tr>
+  {% endfor %}
+</table>
+{% if m.scen.weighted_target %}
+<div class="kv"><span class="k">概率加权目标价</span><span class="v">{{ m.scen.weighted_target|num }}</span></div>
+{% elif m.scen.weighted_target_note %}
+<div class="card warn"><h4>概率加权不可得</h4><div>{{ m.scen.weighted_target_note }}</div></div>
+{% endif %}
+{% set ci = m.scen.current_implied %}
+<div class="card"><h4>市价在假设什么（隐含预期还原）</h4>
+  {% if ci.implied_y1_growth is not none %}
+  <div>使 DCF 等于现价 {{ price|num }} 所需的首年营收增速：<b>{{ ci.implied_y1_growth|pct(1) }}</b>
+       ——最接近 <b>{{ ci.closest_scenario or '—' }}</b> 情景。</div>
+  {% else %}
+  <div>{{ ci.implied_note or ci._note }}</div>
+  {% endif %}
+</div>
+</div>
+
+{# ── 敏感性矩阵 ─────────────────────────────────────────── #}
+<div class="section keep">
+<h2>敏感性：WACC × 永续增长（每股价值）</h2>
+<table>
+  <tr><th>WACC＼g</th>{% for gc in m.sens.col_values %}<th class="num">{{ gc|pct(1) }}</th>{% endfor %}</tr>
+  {% for wr in m.sens.row_values %}
+  <tr><td class="num">{{ wr|pct(1) }}</td>
+    {% for cell in m.sens.matrix[loop.index0] %}
+    <td class="num" {% if loop.index0 == 2 and m.sens.base_cell[0] == 2 %}{% endif %}>
+      {{ cell|num if cell is not none else 'n.m.' }}</td>
+    {% endfor %}
+  </tr>
+  {% endfor %}
+</table>
+<div class="src">n.m. = 该格 g≥WACC−50bp，Gordon 模型无意义（不硬算）。中心格已断言等于 DCF 基准。</div>
+</div>
+
+{# ── 假设清单（估值的分歧全在假设上）────────────────────── #}
+<div class="section keep">
+<h2>假设清单与每股敏感度</h2>
+<table>
+  <tr><th>假设</th><th class="num">取值</th><th>来源</th><th class="num">±每股影响</th><th>依据</th></tr>
+  {% for a in m.assumptions %}
+  <tr><td>{{ a.label }}</td>
+      <td class="num">{{ a.value|num(4) if a.value is not none else '—' }}</td>
+      <td><span class="badge {% if a.source_type == 'hard' %}hard{% elif a.source_type == 'benchmark' %}benchmark{% else %}user{% endif %}">{{ a.source_type }}</span></td>
+      <td class="num">{{ a.per_share_impact|num if a.per_share_impact is not none else '—' }}</td>
+      <td style="font-size:7pt">{{ a.basis }}</td></tr>
+  {% endfor %}
+</table>
+<div class="src">红色 user 徽标 = 主观假设，构成 🔴 需人工核对清单。</div>
+</div>
+{% elif l1_reason %}
+<div class="card warn"><h4>本报告为精简版（L1）</h4><div>{{ l1_reason }}</div></div>
+{% endif %}
+
+{# ── 免责声明 ───────────────────────────────────────────── #}
+<div class="disclaimer">
+<b>免责声明</b>　本报告由 {{ issuer }} 基于公开数据与程序化分析生成，所有数字均可溯源至数据源或模型（溯源清单见配套 run_manifest.json）。
+本报告仅为数据分析与呈现，<b>不构成任何投资建议</b>；模型输出（含 DCF 每股价值、情景目标价）是基于假设的情景估算，非价格预测。
+标注 user 的主观假设需人工核对。投资者应独立判断并自行承担投资风险。{% if logo %}报告所含公司标识（logo）归各自商标权利人所有，此处仅作标识性引用。{% endif %}
+</div>
+
+</body>
+</html>

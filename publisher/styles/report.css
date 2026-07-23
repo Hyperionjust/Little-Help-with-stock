@@ -1,0 +1,199 @@
+/* ═══════════════════════════════════════════════════════════════════
+   equity-research-suite 研报版式（WeasyPrint 专用，唯一 PDF 引擎）
+
+   本文件为按版式规格**原创编写**（见 THIRD-PARTY-NOTICES §2）。
+   所依据的规格是沿用数十年的卖方研报行业惯例，非任何人的私产：
+     R1  表格数字用等宽数字（tabular figures），右缘对齐
+     R2  负数用括号 (1,234.5)，会计惯例
+     R3  预测列（E 列）加米色底，与实际值一眼区分
+     R4  标题孤行保护：节标题绝不落在页尾、内容在下一页
+     R5  A股红涨绿跌 / 港美股绿涨红跌，双套语义色
+     R6  免责声明不小于 8pt——缩小免责等于隐藏风险提示
+     R7  单一藏蓝主色 + 灰阶层级，克制不花哨
+     R8  @page 页眉页脚走 paged-media 边距盒（WeasyPrint 特性，
+         这正是"唯一引擎"决策的原因：Chromium 不支持 running()）
+
+   注意：position:running() / @page 边距盒 / CJK 字体栈 属 CSS 标准
+   与 WeasyPrint 公开特性，任何实现都长这样。
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── 页面设置（R8）───────────────────────────────────────────── */
+@page {
+    size: A4;
+    margin: 16mm 15mm 18mm 15mm;
+    background: #fdfcf5;                  /* 整页铺满淡黄——含页边距，不只内容区 */
+
+    @top-left { content: element(hdr-left); }
+    @top-right { content: element(hdr-right); }
+    @bottom-left { content: element(ftr-left); }
+    @bottom-right {
+        content: "第 " counter(page) " 页 / 共 " counter(pages) " 页";
+        font-size: 7.5pt; color: #8f8d86;
+    }
+}
+@page :first {
+    /* 封面页不出页眉（信息都在封面主体里） */
+    @top-left { content: none; }
+    @top-right { content: none; }
+}
+
+.hdr-left  { position: running(hdr-left);  font-size: 7.5pt; color: #8f8d86; }
+.hdr-right { position: running(hdr-right); font-size: 7.5pt; color: #1f3a5f;
+             font-weight: 600; }
+.ftr-left  { position: running(ftr-left);  font-size: 7pt;   color: #adaba4; }
+
+/* ── 基础排版（R7）───────────────────────────────────────────── */
+html { font-size: 10pt; }
+body {
+    background: #fdfcf5;                   /* 极淡黄底（护眼、机构文档质感）*/
+    font-family: "Noto Sans CJK SC", "Noto Sans SC", "PingFang SC",
+                 "Microsoft YaHei", sans-serif;
+    color: #2b2b28;
+    line-height: 1.55;
+    margin: 0;
+}
+
+h1 { font-size: 19pt; color: #1f3a5f; margin: 0 0 2mm; }
+h2 {
+    font-size: 12.5pt; color: #1f3a5f;
+    border-bottom: 1.6pt solid #1f3a5f;
+    padding-bottom: 1.2mm; margin: 7mm 0 3mm;
+    page-break-after: avoid;             /* R4 的一半：标题后不许断页 */
+}
+h3 { font-size: 10.5pt; color: #3d5876; margin: 4mm 0 2mm;
+     page-break-after: avoid; }
+
+/* R4 的另一半：被 avoid 顶到下页的内容必须把标题一起带走 */
+h2 + *, h3 + * { page-break-before: avoid; }
+p, li { orphans: 3; widows: 3; }
+
+/* ── 表格（R1 / R2 / R3）─────────────────────────────────────── */
+table {
+    width: 100%; border-collapse: collapse;
+    font-size: 8.5pt; margin: 2mm 0 3mm;
+    page-break-inside: avoid;
+}
+th {
+    background: #1f3a5f; color: #ffffff;
+    font-weight: 600; text-align: left;
+    padding: 1.6mm 2mm; font-size: 8pt;
+}
+td { padding: 1.4mm 2mm; border-bottom: 0.4pt solid #d9d9d9; }
+tr:nth-child(even) td { background: #f8f6ec; }
+
+/* R1：等宽数字是"看起来像机构报告"的一半原因——每个字符同宽，
+   小数点与千分位在整列里垂直对齐 */
+td.num, th.num, .figure {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    white-space: nowrap;
+}
+/* R2：括号负数（渲染层把负值格式化成括号形式，样式给危险色） */
+.neg { color: #b5615a; }
+/* R3：预测列米色底 + 表头斜体，E 列一眼可辨 */
+td.forecast { background: #f6efd8 !important; }
+th.forecast { font-style: italic; background: #345278; }
+
+/* ── 语义色（R5）────────────────────────────────────────────── */
+.up-a  { color: #b5615a; }   /* A股：涨为红 */
+.dn-a  { color: #5a8a6a; }   /* A股：跌为绿 */
+.up-us { color: #5a8a6a; }   /* 港美：涨为绿 */
+.dn-us { color: #b5615a; }
+
+/* ── 组件 ───────────────────────────────────────────────────── */
+.cover { margin-top: 8mm; }
+.cover .meta { color: #6b7f96; font-size: 9pt; margin-bottom: 6mm; }
+.pricebar {
+    display: flex; justify-content: space-between;
+    background: #1f3a5f; color: #fff;
+    padding: 3mm 4mm; margin: 4mm 0;
+    font-size: 9pt;
+}
+.pricebar .v { font-size: 13pt; font-weight: 700;
+               font-variant-numeric: tabular-nums; }
+.pricebar .k { font-size: 7.5pt; color: #c3d2e0; display: block; }
+
+.grid2 { display: flex; gap: 4mm; }
+.grid2 > div { flex: 1; }
+
+.card {
+    border: 0.5pt solid #d6ddd0; border-left: 2.5pt solid #1f3a5f;
+    padding: 2.5mm 3mm; margin: 2mm 0;
+    page-break-inside: avoid;
+    font-size: 8.5pt;
+}
+.card.warn { border-left-color: #c8925a; background: #faf4e6; }
+.card.risk { border-left-color: #b5615a; background: #f8efed; }
+.card h4 { margin: 0 0 1.5mm; font-size: 8.5pt; color: #1f3a5f; }
+.card.warn h4 { color: #8a5e28; }
+.card.risk h4 { color: #8a4a44; }
+
+.kv { display: flex; justify-content: space-between;
+      border-bottom: 0.3pt dotted #ccc; padding: 0.8mm 0; font-size: 8.5pt; }
+.kv .k { color: #5a6e84; }
+.kv .v { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+.badge { display: inline-block; font-size: 6.5pt; padding: 0.4mm 1.5mm;
+         border-radius: 1mm; margin-left: 1mm; vertical-align: middle; }
+.badge.hard { background: #e0ecdf; color: #4f7a5e; }
+.badge.benchmark { background: #e6edf5; color: #33506e; }
+.badge.user { background: #f7e6e3; color: #a05650; }   /* 主观假设醒目标红 */
+
+.src { font-size: 6.8pt; color: #9aa7b5; margin-top: 0.5mm; }
+
+/* ── 免责声明（R6）──────────────────────────────────────────── */
+.disclaimer {
+    font-size: 8pt;                       /* 不得再小——缩小免责=隐藏风险 */
+    color: #454440;
+    border-top: 0.6pt solid #bbb;
+    margin-top: 6mm; padding-top: 2.5mm;
+    page-break-inside: avoid;
+}
+
+/* 模块级断页控制：速览自由流式，不强制每模块一页 */
+.section { page-break-inside: auto; }
+.keep { page-break-inside: avoid; }
+
+/* ── 深度研报扩展（连续排版，不强制每模块一页）──────────────── */
+/* 用户要求：不用每个版块分页，在不截断的情况下连续。
+   做法：模块本身不强制起新页（去掉 page-break-before:always），
+   改为"模块内不被截断"——一个模块若放不下当前页剩余空间，整体移到下一页，
+   但页面不会为了每个模块都留大片空白。图表/表格/卡片各自 avoid 截断已在前文设定。 */
+.report .module { page-break-before: auto; page-break-inside: auto; margin-top: 4mm; }
+.report .module:first-of-type { margin-top: 0; }
+.report h2 { margin-top: 4mm; }
+.toc-line { display: flex; justify-content: space-between;
+            border-bottom: 0.3pt dotted #ccc; padding: 1mm 0; font-size: 9pt; }
+.toc-line .t { color: #3d5876; }
+.toc-line .p { font-variant-numeric: tabular-nums; color: #8496a8; }
+.chart { text-align: center; margin: 3mm 0; page-break-inside: avoid; }
+.chart img { max-width: 100%; }
+.exec-box { background: #f7f6ec; border: 0.5pt solid #d6ddd0; padding: 3mm 4mm;
+            margin: 3mm 0; font-size: 9pt; page-break-inside: avoid; }
+.sowhat { border-left: 2.5pt solid #c8925a; background: #faf4e6;
+          padding: 2mm 3mm; margin: 2mm 0; font-size: 8.5pt; }
+.sowhat b { color: #8a5e28; }
+.debate th:nth-child(2) { background: #4f7a5e; }   /* 多头列绿 */
+.debate th:nth-child(3) { background: #8a4a44; }   /* 空头列红 */
+.dim { margin: 2.5mm 0; page-break-inside: avoid; }
+.dim h3 { color: #1f3a5f; border-bottom: 0.5pt solid #ccd; padding-bottom: 0.8mm; }
+.cover-full h1 { font-size: 22pt; margin-bottom: 1mm; }
+.cover-full .sub { color: #6b7f96; font-size: 10pt; margin-bottom: 4mm; }
+
+/* ── 补充研究区排版（bullet + 研判加粗块）────────────────────── */
+.insight-sec { font-size: 9pt; margin: 2mm 0 3mm; page-break-inside: auto; }
+.insight-sec p { margin: 1.5mm 0; }
+.insight-sec ul { margin: 1.5mm 0 1.5mm 0; padding-left: 5mm; }
+.insight-sec li { margin: 0.8mm 0; font-size: 8.8pt; }
+.insight-sec b { color: #1f3a5f; }                 /* 段内重要 insight 加粗染主色 */
+.insight-sec .verdict { border-left: 2pt solid #c8925a; background: #faf4e6;
+                        padding: 1.5mm 2.5mm; margin: 1.5mm 0; }
+.insight-sec .verdict b { color: #8a5e28; }
+.trend-caveat { border: 0.6pt dashed #c8925a; background: #faf3e2;
+                padding: 2mm 3mm; margin: 2mm 0; font-size: 8pt; color: #8a5e28; }
+
+/* ── 公司 logo（封面右上角，克制）+ 商标声明 ──────────────────── */
+.cover-logo { position: absolute; top: 14mm; right: 15mm;
+              max-height: 14mm; max-width: 40mm; }
+.cover, .cover-full { position: relative; }
+.tm-note { font-size: 6.5pt; color: #9aa7b5; margin-top: 1.5mm; }

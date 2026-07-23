@@ -1,0 +1,103 @@
+# ═══════════════════════════════════════════════════════════════════════
+# 自定义付费终端适配器模板
+#
+# 把你的付费终端接进本工具：复制本文件为 <你的终端名>.yaml，按注释填写，
+# 放在本目录下即可。**不需要改任何 Python 代码。**
+#
+# 填完后验证：  python engine/providers/paid/registry.py
+# 它会列出所有认证就绪的适配器；你的应出现在其中。
+# ═══════════════════════════════════════════════════════════════════════
+
+name: my_terminal            # 唯一标识（小写+下划线），也是文件名主体
+display_name: 我的终端        # 报告里展示的名字
+vendor: 某数据商
+
+markets: [A, HK, US]         # 该源覆盖哪些市场，任填子集
+tier: 0                      # 0 = 付费/正式数据，升为链首；数字越小越优先
+
+# 若该源提供了权威的会计准则口径，填在这里（供三表标注）；不确定就删掉此行
+accounting_standard: CAS     # CAS | IFRS | US_GAAP
+
+# ── 认证：工具靠这个判断"用户是否配好了 key" ──────────────────────────
+auth:
+  # method 决定"就绪"的判定方式：
+  #   env_token      —— 环境变量里有 token（最常见）
+  #   file_drop      —— 用户上传导出文件（见文末 file_drop 示例）
+  #   cli            —— 本地装了终端客户端
+  #   host_function  —— 运行环境注入了数据连接器
+  #   none           —— 无需认证（公共 API）
+  method: env_token
+  env_var: MY_TERMINAL_TOKEN   # 用户把 key 放进这个环境变量
+
+# ── 传输：怎么把数据拿回来 ────────────────────────────────────────────
+transport:
+  kind: http                 # http | file_drop | cli | host_function
+  timeout_s: 20
+  # 每种能力一个端点。{symbol} 会被替换为股票代码，{token} 为 auth.env_var 的值，
+  # {env:XXX} 为任意环境变量。response_root 是响应里数据数组/对象的点路径。
+  endpoints:
+    quote:
+      url: "https://api.example.com/quote?code={symbol}&token={token}"
+      response_root: "data"          # 如响应是 {"data": {...}}
+    financials:
+      url: "https://api.example.com/financials?code={symbol}&token={token}"
+      response_root: "data.annual"   # 如响应是 {"data": {"annual": [...]}}
+    estimates:
+      url: "https://api.example.com/consensus?code={symbol}&token={token}"
+      response_root: "data"
+
+# ── 能力：这个源能提供哪些数据 ────────────────────────────────────────
+# 免费源普遍拿不到的（estimates 一致预期、segments 分部、peers 可比），
+# 正是付费源的价值所在——如实声明，工具会据此解锁对应功能。
+capabilities: [quote, financials, estimates]
+
+# ── 字段映射 ＋ 单位声明（本工具的核心）────────────────────────────────
+# 左边是本工具的标准字段名（不可改），右边告诉工具去上游响应的哪个字段取值、
+# 原始单位是什么。**单位一定要填对**——工具靠它把 元/万/亿 统一成内部口径；
+# 填错会被"量纲哨兵"拦下（市值÷价格得出的隐含股本异常时报 critical）。
+#
+# unit 可选值：native（每股价格类，不换算）、元、千、万、百万、亿、
+#              thousand、million、billion 等（见 engine/_util.UNIT_FACTORS）
+fields:
+  quote:
+    price:        { path: "close",        unit: native }   # 现价，原币，不换算
+    market_cap:   { path: "total_mv",     unit: "万元" }   # ← 按你的源实际单位改！
+    prev_close:   { path: "pre_close",    unit: native }
+    total_shares: { path: "total_share",  unit: "万股" }
+    float_shares: { path: "float_share",  unit: "万股" }
+  financials:
+    revenue:          { path: "revenue",        unit: "元" }
+    net_income:       { path: "n_income_attr_p", unit: "元" }
+    operating_income: { path: "operate_profit", unit: "元" }
+    total_assets:     { path: "total_assets",   unit: "元" }
+    total_liabilities: { path: "total_liab",    unit: "元" }
+    equity:           { path: "total_hldr_eqy_exc_min_int", unit: "元" }
+    cash:             { path: "money_cap",      unit: "元" }
+    ocf:              { path: "n_cashflow_act", unit: "元" }
+    eps_diluted:      { path: "diluted_eps",    unit: native }
+  estimates:
+    "fy1.net_income": { path: "forecast_np_fy1", unit: "元" }
+    "fy1.revenue":    { path: "forecast_rev_fy1", unit: "元" }
+
+# ── 源特性（可选）────────────────────────────────────────────────────
+quirks:
+  date_format: YYYYMMDD      # 若端点要求特定日期格式
+  ticker_suffix: { A: auto_sh_sz, HK: ".HK", US: "" }
+
+# ═══════════════════════════════════════════════════════════════════════
+# file_drop 示例（用户上传 Wind/iFind 导出的 xlsx·csv，无需 API）：
+#
+#   auth:
+#     method: file_drop
+#     path_env: ERS_IMPORT_FILE     # 工具在用户提供文件时设置此变量
+#   transport:
+#     kind: file_drop
+#     formats: [xlsx, csv]
+#   fields:
+#     financials:
+#       revenue:    { aliases: ["营业总收入", "营业收入", "Revenue"], unit: "元" }
+#       net_income: { aliases: ["归母净利润", "净利润", "Net Income"], unit: "元" }
+#
+#   导出文件的列名千差万别，故 file_drop 用 aliases（别名列表）而非 path——
+#   工具会在表头里逐一匹配这些别名。
+# ═══════════════════════════════════════════════════════════════════════

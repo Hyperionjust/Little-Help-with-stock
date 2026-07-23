@@ -1,0 +1,34 @@
+# 中文界面字符串（双语决定 §9.2：面向用户的字符串外置，不硬编码）。
+# 报告语言从用户输入自动检测，可显式覆盖。
+version: "1.0"
+lang: zh
+
+report:
+  disclaimer: >-
+    本报告由 {issuer} 基于公开数据与程序化分析生成，所有数字均可溯源至数据源或模型。
+    本报告仅为数据分析与呈现，不构成任何投资建议；模型输出是基于假设的情景估算，非价格预测。
+    标注 user 的主观假设需人工核对。投资者应独立判断并自行承担投资风险。
+  source_line: "数据源：{price_src}（行情） · {fin_src}（财报）"
+  gen_date: "生成日期"
+  issuer_default: "内部研究（自用）"
+
+sections:
+  fundamentals: 基本面速览
+  financial_history: 财务历史
+  projection: 五年投影
+  dcf: DCF 估值
+  scenario: 情景与市价隐含预期
+  sensitivity: 敏感性
+  assumptions: 假设清单与每股敏感度
+  pharma: 医药管线估值
+
+env:
+  desktop_only: >-
+    这个工具需要在 Claude 桌面版里运行（要装 Python 库、要联网抓行情），网页版跑不了。
+    请在桌面应用里打开后再试。
+
+labels:
+  source_type:
+    hard: 硬数据
+    benchmark: 行业基准
+    user_assumption: 需人工核对

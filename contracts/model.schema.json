@@ -1,0 +1,1012 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://equity-research-suite.local/model.schema.json",
+  "title": "equity-research-suite — model.json（分析师 → 出版 契约）",
+  "description": "分析师层的全部产出：假设、三表预测、DCF、可比、情景、敏感性、风险。设计原则：DCF 的每个中间量都要落到 JSON 里，不许活在 Excel 单元格或 LLM 的记忆里。出版层只能从 analysis.json ∪ model.json 取数，不得引入新数字。",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "valuation_level",
+    "source_analysis_path",
+    "source_analysis_hash",
+    "assumptions",
+    "gate"
+  ],
+  "additionalProperties": true,
+  "definitions": {
+    "source_type": {
+      "type": "string",
+      "description": "假设来源等级。估值的分歧几乎全在假设上，把来源摊开读者才能判断该信多少。",
+      "enum": [
+        "hard",
+        "benchmark",
+        "user_assumption"
+      ]
+    },
+    "check_result": {
+      "type": "object",
+      "description": "由脚本判定的检查结果，不是 LLM 自称。",
+      "required": [
+        "passed"
+      ],
+      "properties": {
+        "passed": {
+          "type": "boolean"
+        },
+        "value": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "tolerance": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "note": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "series": {
+      "type": "array",
+      "items": {
+        "type": [
+          "number",
+          "null"
+        ]
+      }
+    }
+  },
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "valuation_level": {
+      "type": "string",
+      "description": "L1=仅可比公司+倍数；L2=L1+三表模型+DCF+敏感性",
+      "enum": [
+        "L1",
+        "L2"
+      ]
+    },
+    "degraded_from_l2": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "本欲做 L2 但数据不足而降级时必填。诚实降级优于硬做。",
+      "properties": {
+        "reason": {
+          "type": "string"
+        },
+        "missing": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "source_analysis_path": {
+      "type": "string"
+    },
+    "source_analysis_hash": {
+      "type": "string",
+      "description": "锁定输入。防止拿上周的 analysis.json 出这周的报告——多会话流水线里这类错配无声无息。"
+    },
+    "report_language": {
+      "type": "string",
+      "enum": [
+        "zh",
+        "en"
+      ]
+    },
+    "assumptions": {
+      "type": "array",
+      "description": "假设敏感性表（龙卷风图的表格形态）。串起 预测→情景→DCF敏感性 的脊椎。per_share_impact 由脚本算。",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "value",
+          "source_type"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "value": {
+            "type": [
+              "number",
+              "string",
+              "null"
+            ]
+          },
+          "unit": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source_type": {
+            "$ref": "#/definitions/source_type"
+          },
+          "basis": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "取值依据，benchmark 类必须指明出处"
+          },
+          "bull": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "bear": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "per_share_impact": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "±该假设对每股价值的影响，脚本计算"
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "projections": {
+      "type": "object",
+      "description": "三表预测。checks 由 model_builder.py 判定，任一 false 即阻断，不得进入出版层。",
+      "required": [
+        "years",
+        "checks"
+      ],
+      "properties": {
+        "years": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "income_statement": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/series"
+          }
+        },
+        "balance_sheet": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/series"
+          }
+        },
+        "cash_flow": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/series"
+          }
+        },
+        "drivers": {
+          "type": "object",
+          "properties": {
+            "revenue_build": {
+              "type": "array",
+              "description": "分部收入拆解：量×价，而非一个增长率拍脑袋",
+              "items": {
+                "type": "object",
+                "required": [
+                  "segment",
+                  "driver_type"
+                ],
+                "properties": {
+                  "segment": {
+                    "type": "string"
+                  },
+                  "driver_type": {
+                    "type": "string",
+                    "enum": [
+                      "units_x_asp",
+                      "subs_x_arpu",
+                      "gmv_x_take_rate",
+                      "licensed_x_royalty",
+                      "projects_x_value",
+                      "impressions_x_cpm",
+                      "aggregate"
+                    ]
+                  },
+                  "volume": {
+                    "$ref": "#/definitions/series"
+                  },
+                  "price": {
+                    "$ref": "#/definitions/series"
+                  },
+                  "revenue": {
+                    "$ref": "#/definitions/series"
+                  }
+                },
+                "additionalProperties": true
+              }
+            },
+            "margin_bridge": {
+              "type": "array",
+              "description": "毛利/营业利润率变动的 bps 级分解，每个驱动必须命名并给依据",
+              "items": {
+                "type": "object",
+                "required": [
+                  "driver",
+                  "bps"
+                ],
+                "properties": {
+                  "driver": {
+                    "type": "string"
+                  },
+                  "bps": {
+                    "type": "number"
+                  },
+                  "basis": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "additionalProperties": true
+              }
+            }
+          },
+          "additionalProperties": true
+        },
+        "checks": {
+          "type": "object",
+          "required": [
+            "balance_sheet_balanced",
+            "cash_tie_out",
+            "historical_replication"
+          ],
+          "properties": {
+            "balance_sheet_balanced": {
+              "$ref": "#/definitions/check_result"
+            },
+            "cash_tie_out": {
+              "$ref": "#/definitions/check_result"
+            },
+            "revenue_ties_to_segments": {
+              "$ref": "#/definitions/check_result"
+            },
+            "historical_replication": {
+              "$ref": "#/definitions/check_result"
+            },
+            "no_hardcode_override": {
+              "$ref": "#/definitions/check_result"
+            },
+            "sign_unit_conventions": {
+              "$ref": "#/definitions/check_result"
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "dcf": {
+      "type": "object",
+      "description": "绝对估值。已修正原素材的四项方法学缺陷：权益桥不重复计现金、启用期中折现、股本与SBC联动、TV占比与退出倍数双向校验。",
+      "required": [
+        "wacc",
+        "ufcf",
+        "terminal",
+        "enterprise_value",
+        "equity_value",
+        "value_per_share"
+      ],
+      "properties": {
+        "wacc": {
+          "type": "object",
+          "required": [
+            "risk_free",
+            "erp",
+            "beta",
+            "cost_of_equity",
+            "wacc"
+          ],
+          "properties": {
+            "risk_free": {
+              "type": "number"
+            },
+            "erp": {
+              "type": "number",
+              "description": "分市场校准：A股 6-7% / 美股 4.5-5.5% / 港股 5.5-6.5%"
+            },
+            "beta": {
+              "type": "number"
+            },
+            "beta_method": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "cost_of_equity": {
+              "type": "number"
+            },
+            "cost_of_debt": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "tax_rate": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "weight_equity": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "weight_debt": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "debt_basis": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "enum": [
+                "book_value",
+                "market_value",
+                null
+              ]
+            },
+            "wacc": {
+              "type": "number"
+            },
+            "in_market_band": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "A股合理带 6-15%，越界触发 warning"
+            }
+          },
+          "additionalProperties": true
+        },
+        "mid_year_convention": {
+          "type": "boolean",
+          "description": "期中折现。原素材假设现金流年末到账，系统性低估约 WACC/2。"
+        },
+        "ufcf": {
+          "$ref": "#/definitions/series"
+        },
+        "discount_factors": {
+          "$ref": "#/definitions/series"
+        },
+        "pv_explicit": {
+          "type": "number"
+        },
+        "terminal": {
+          "type": "object",
+          "required": [
+            "method",
+            "tv",
+            "pv_tv",
+            "tv_pct_of_ev"
+          ],
+          "properties": {
+            "method": {
+              "type": "string",
+              "enum": [
+                "gordon_growth",
+                "exit_multiple"
+              ]
+            },
+            "g": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "永续增长率。分市场：A股 2-4%（中国名义GDP收敛）/ 美股 1.5-3%"
+            },
+            "exit_multiple": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "tv": {
+              "type": "number"
+            },
+            "pv_tv": {
+              "type": "number"
+            },
+            "tv_pct_of_ev": {
+              "type": "number",
+              "description": ">0.80 触发 warning 并要求说明"
+            },
+            "implied_exit_multiple": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "反向校验：退出倍数须隐含合理的永续增长"
+            },
+            "g_lt_wacc": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": true
+        },
+        "enterprise_value": {
+          "type": "number"
+        },
+        "equity_bridge": {
+          "type": "object",
+          "description": "EV - 净负债 - 少数股东权益 - 优先股 + 联营企业投资。净负债已含全部现金，绝不再加回超额现金（原素材此处重复计数）。",
+          "properties": {
+            "less_net_debt": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "less_minority": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "less_preferred": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "add_associates": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "_formula": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": true
+        },
+        "equity_value": {
+          "type": "number"
+        },
+        "shares_diluted": {
+          "type": "number"
+        },
+        "shares_diluted_basis": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "须说明是否含 SBC 稀释爬坡。SBC 加回 FCF 却不稀释股本会系统性高估每股价值。"
+        },
+        "sbc_linked_to_shares": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "value_per_share": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": true
+    },
+    "comps": {
+      "type": "object",
+      "description": "相对估值。统一用中位数+分位数，不用均值（4个样本的均值对离群值过于敏感）。",
+      "properties": {
+        "metric": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "basis": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "peer_median": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "target_percentile": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "adjustments": {
+          "type": "array",
+          "description": "可比调整：增长差/利润率差/杠杆差/会计准则差。原素材完全没有调整框架。",
+          "items": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "growth",
+                  "margin",
+                  "leverage",
+                  "accounting_standard",
+                  "fiscal_alignment",
+                  "other"
+                ]
+              },
+              "adjustment": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "basis": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "implied_price": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "historical_band": {
+      "type": "object",
+      "properties": {
+        "metric": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "current_percentile": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "mean": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "std": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "implied_price": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "computed_from_series": {
+          "type": "boolean",
+          "description": "必须为 true——统计量须由脚本从序列计算，不接受调用方直接喂入"
+        }
+      },
+      "additionalProperties": true
+    },
+    "valuation_synthesis": {
+      "type": "object",
+      "description": "三镜合一：绝对/相对同业/相对自身历史。必须给出收敛区间而非单点。",
+      "properties": {
+        "methods": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "price"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "price": {
+                "type": "number"
+              },
+              "weight": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "converged_range": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "target_price": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "scenarios": {
+      "type": "object",
+      "description": "情景分析。current_implied 是隐含假设还原——反推当前价格最接近哪个情景，把情景分析从装饰变成预期差发现。",
+      "properties": {
+        "bull": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "base": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "bear": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "probability_sum": {
+          "type": "number",
+          "description": "硬约束 = 1.00，脚本校验"
+        },
+        "base_probability_in_band": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "基准情景概率须在 45-60%"
+        },
+        "weighted_target": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "current_implied": {
+          "type": "object",
+          "properties": {
+            "price": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "closest_scenario": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "implied_revenue_cagr": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "implied_terminal_margin": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": true
+        },
+        "transition_triggers": {
+          "type": "array",
+          "description": "情景转换图：什么信号会让你从一个情景搬到另一个。预先承诺的证伪协议。",
+          "items": {
+            "type": "object",
+            "properties": {
+              "from": {
+                "type": "string"
+              },
+              "to": {
+                "type": "string"
+              },
+              "trigger": {
+                "type": "string"
+              },
+              "source": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "horizon": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "sensitivity": {
+      "type": "object",
+      "properties": {
+        "row_var": {
+          "type": "string"
+        },
+        "row_values": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "col_var": {
+          "type": "string"
+        },
+        "col_values": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "matrix": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          }
+        },
+        "base_cell": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "base_cell_equals_dcf": {
+          "type": "boolean",
+          "description": "中心格必须等于 DCF 基准值，脚本断言"
+        },
+        "g_lt_wacc_all_cells": {
+          "type": "boolean",
+          "description": "全矩阵 g<WACC，防角落格爆炸"
+        }
+      },
+      "additionalProperties": true
+    },
+    "risks": {
+      "type": "array",
+      "description": "8-16 条，跨 4 类。统一 0-1 连续标尺（原素材有两套互不兼容的评分体系）。影响锚定到估值百分比，使风险与 DCF 可通约。",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "category",
+          "name",
+          "probability",
+          "impact"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "company",
+              "industry",
+              "financial",
+              "macro_regulatory"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "probability": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "impact": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "对估值的影响比例"
+          },
+          "score": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "probability × impact"
+          },
+          "horizon": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "mitigation": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "monitoring_signal": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "scenario_link": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "key_figures": {
+      "type": "array",
+      "description": "供出版层对账与引导层取数的关键数字登记表。每个 headline 数字标 tied 或携带 variance_explanation。",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "metric",
+          "value"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "metric": {
+            "type": "string"
+          },
+          "value": {
+            "type": [
+              "number",
+              "string"
+            ]
+          },
+          "unit": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "period": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "model_location": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "工作簿 sheet!range 或 JSON 路径"
+          },
+          "tie_out_status": {
+            "type": "string",
+            "enum": [
+              "tied",
+              "variance",
+              "untied"
+            ]
+          },
+          "variance_explanation": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "gate": {
+      "type": "object",
+      "description": "模型自洽门禁（闸2）。与 engine 的 quality_gate 同构：critical 非空即阻断，不得进入出版层。",
+      "required": [
+        "passed",
+        "degraded",
+        "critical",
+        "warning"
+      ],
+      "properties": {
+        "passed": {
+          "type": "boolean"
+        },
+        "degraded": {
+          "type": "boolean"
+        },
+        "critical": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "warning": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "release_blocker": {
+          "type": "boolean",
+          "description": "存在未关闭的阻断项时禁止交付"
+        }
+      },
+      "additionalProperties": true
+    },
+    "diagnostics": {
+      "type": "array",
+      "description": "分析师层的结构化诊断，形状同 analysis.schema.json#/definitions/diagnostic",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    }
+  }
+}

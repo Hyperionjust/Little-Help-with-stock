@@ -1,0 +1,57 @@
+# 阅读导引 + 术语人话化对照。
+# 首份深度研报交付时给阅读导引；对话里默认用人话，用户追问再展开专业口径。
+
+version: "1.0"
+
+# 首份深度研报的阅读导引
+first_report_guide:
+  zh: |
+    建议这样读：
+    - **开头**是结论和目标价（如果给了的话）
+    - **中段**是三表模型、DCF、可比公司——所有数字都能追溯到数据源或模型单元格
+    - **结尾**是假设清单和风险
+    带 🔴（红色 user 徽标）的是需要人工核对的主观假设——尤其医药管线估值，那是数量级示意，不是目标价。
+  en: |
+    Suggested reading order:
+    - **Top**: conclusion and target price (if given)
+    - **Middle**: 3-statement model, DCF, comparables — every number traces to a source or a model cell
+    - **End**: assumption list and risks
+    Items marked 🔴 (red "user" badge) are subjective assumptions to double-check — especially pharma pipeline value, which is an order-of-magnitude illustration, not a target price.
+
+# 术语人话化：对话层默认左列，用户追问给右列
+plain_language:
+  cash_content:
+    plain_zh: 赚的利润有多少真变成了现金
+    term_zh: 现金含量比率（经营现金流/净利润）
+  roe:
+    plain_zh: 股东每投一块钱一年赚回多少
+    term_zh: 净资产收益率 ROE
+  reverse_validation:
+    plain_zh: 利润好看但现金流对不上的预警
+    term_zh: 逆向验证（应收/存货/现金流与营收增速的背离）
+  dcf:
+    plain_zh: 把公司未来能赚的现金折算到今天值多少
+    term_zh: 现金流折现估值 DCF
+  wacc:
+    plain_zh: 折现用的利率（越高说明越不确定）
+    term_zh: 加权平均资本成本 WACC
+  terminal_value:
+    plain_zh: 预测期之后公司永远存在的那部分价值
+    term_zh: 终值（Gordon 永续增长模型）
+  rnpv:
+    plain_zh: 把在研药按成功概率打折后的估值
+    term_zh: 风险调整净现值 rNPV
+  implied_growth:
+    plain_zh: 现在的股价在假设公司未来能长多快
+    term_zh: 市价隐含增速（reverse-DCF 反推）
+  tv_pct:
+    plain_zh: 估值有多少压在"很多年以后"的假设上
+    term_zh: 终值占企业价值比重
+
+# 尺度纪律（写进引导逻辑，防话痨）
+discipline:
+  - 首触能力卡每会话最多一次
+  - 下一步建议最多 3 条，且必须具体可复制
+  - 用户用了准确术语（见 capability-map.expert_signals）即降级引导
+  - 引导语只在开头（询问档位）或末尾（下一步），绝不插进报告正文中间
+  - 免责与边界提示在合适时机说一次，不每段重复

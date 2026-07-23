@@ -1,0 +1,64 @@
+# 交付后的下一步建议（主力引导触点）。
+# 每份产出末尾给 2-3 条"你现在可以说……"，按刚做了什么动态选取。
+# 关键：建议里带**真实数字**（fill_from 从契约 JSON 取值），不说空话。
+# 硬约束：最多 3 条，必须具体可复制。
+
+version: "1.0"
+
+after_dashboard:      # 刚交付：指标看板
+  - id: peers
+    zh: 看看它同行都什么估值
+    en: See how peers are valued
+  - id: earnings_quality
+    zh: 它的利润是不是真金白银
+    en: Is the profit backed by cash?
+  - id: to_tearsheet
+    zh: 出一份投资速览 PDF
+    en: Turn this into a tear-sheet PDF
+
+after_tearsheet:      # 刚交付：投资速览
+  - id: upgrade_full
+    zh: 升级成深度研报（含三表模型和 DCF）
+    en: Upgrade to a full report (3-statement + DCF)
+    condition: valuation_level == 'L1'
+  - id: scenario_tweak
+    zh: "如果{key_driver}掉到 {bear_value} 会怎样"
+    en: "What if {key_driver} falls to {bear_value}?"
+    fill_from: "model.json:assumptions[?id=='op_margin'].bear"
+    fallback_zh: 如果毛利率掉几个点会怎样
+  - id: switch_lang
+    zh: 换成英文版
+    en: Switch to Chinese
+
+after_full_report:    # 刚交付：深度研报
+  - id: change_g
+    zh: "把永续增长率改成 2.5% 重算"
+    en: "Rerun with terminal growth at 2.5%"
+  - id: compare_peer
+    zh: "跟 {peer_name} 对比一下"
+    en: "Compare with {peer_name}"
+    fill_from: "analysis.json:peers.items[?is_target==false][0].name"
+    fallback_zh: 跟主要同行对比一下
+  - id: export_excel
+    zh: 导出 Excel 模型我自己改参数
+    en: Export the Excel model so I can tweak inputs
+
+after_pharma:         # 医药标的（任意档叠加）
+  - id: explain_rnpv
+    zh: 解释一下 rNPV 是怎么算的
+    en: Explain how rNPV is computed
+  - id: pipeline_driver
+    zh: 哪个管线假设最影响估值
+    en: Which pipeline assumption drives the valuation most?
+  - id: loe_impact
+    zh: 专利到期对收入影响多大
+    en: How big is the patent-cliff impact?
+
+# 降级路径：数据缺失时给出路，不只报错（内容源 = 诊断对象的 user_action）
+on_degraded:
+  hk_quarterly:
+    zh: 港股季度财报免费源普遍拿不到，我用年报口径建的模型（报告已声明）。你要是有 Wind/iFind 导出的财报表，直接发给我，用完整口径重算。
+    en: Free sources rarely carry HK quarterly filings; I built the model on annual figures (flagged). Send a Wind/iFind export and I'll rerun at full granularity.
+  insufficient_l2:
+    zh: 现有数据不够搭三表模型，我先按精简版（可比公司估值）出报告。想要完整 DCF：接入付费终端，或发我终端导出的财报。
+    en: Not enough data for a 3-statement model; producing the streamlined comps report. For full DCF, connect a paid terminal or send an export.
